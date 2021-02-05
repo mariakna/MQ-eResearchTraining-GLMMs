@@ -105,8 +105,8 @@ data2$TargetAnswer <- factor(data2$TargetAnswer)
 This step is essential and should not be neglected as it allows you to ensure that your data looks as it should. You can do it in any way you want. I often used the function `xtabs()`, for example:
 
 ```{r}
-xtabs(~ Subj + List,data2) 
-xtabs(~ Subj + Cond,data2) 
+head(xtabs(~ Subj + List,data2)) 
+head(xtabs(~ Subj + Cond,data2)) 
 xtabs(~ List + Cond,data2) 
 xtabs(~ Cond + DistLC,data2) 
 xtabs(~ List + DistLC,data2) 
