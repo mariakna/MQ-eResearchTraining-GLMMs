@@ -1,5 +1,5 @@
 # MQ-eResearchTraning--G-LMEmodels
-Short webinar on how to fit (G)LME models in R (part of eResearch Training at MQ, Sydney, Feb 18, 2021)
+Short webinar on how to fit (G)LME models in R (part of eResearch Training at MQ, Feb 18, 2021)
 
 ## Abstract
 
