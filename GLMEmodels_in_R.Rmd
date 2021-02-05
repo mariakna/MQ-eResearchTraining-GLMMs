@@ -43,9 +43,16 @@ Data that we will be using today is publicly available [on my OSF page](https://
 Download the file *pwiExp.xlsx*, save it in a directory of your choice, make this directory your working directory by using the command `setwd()` and load the file as shown below:
 
 ```{r}
-# load full dataset:
-data_complete <- read.xlsx("pwi.xlsx", sheet = 1)
-# keep experimental items only:
-data <- data_complete %>%
-  filter(ItemType == "Exp")
+data <- read.xlsx("pwiExp.xlsx", sheet = 1)
 ```
+
+This file contains data from a picture-word interference task. In this task, German native speakers named (in German) pictures of familiar concepts (e.g., elephant) with superimposed written word distractors. The distractors were either semantically related (e.g., 'cat') or unrelated (e.g.'hammer') to the depicted concepts. The distractors were either German words or novel words that the participants had learned earlier. 
+
+<center>
+![FigName](pwi.png){width=300px}
+</center>
+
+**Hypothesis:** 
+
+- Compared to semantically unrelated distractors, distractors from the same semantic category will slow picture naming response times.
+
