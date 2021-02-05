@@ -36,7 +36,7 @@ library("ggsignif")
 library("RColorBrewer")
 ```
 
-# Load the data
+# Load data
 
 Data that we will be using today is publicly available [on my OSF page](https://osf.io/g7ftz/) as well as [on GitHub](https://github.com/mariakna/MQ-eResearchTraning--G-LMEmodels).
 
@@ -46,7 +46,7 @@ Download the file *pwiExp.xlsx*, save it in a directory of your choice, make thi
 data <- read.xlsx("pwiExp.xlsx", sheet = 1)
 ```
 
-This file contains data from a picture-word interference task. In this task, German native speakers named (in German) pictures of familiar concepts (e.g., elephant) with superimposed written word distractors. The distractors were either semantically related (e.g., 'cat') or unrelated (e.g.'hammer') to the depicted concepts. The distractors were either German words, or novel words that the participants had learned earlier, or unknown pseudowords. 
+This file contains data from a picture-word interference task. In this task, German native speakers named (in German) pictures of familiar concepts (e.g., elephant) with superimposed written word distractors. The distractors were either semantically related (e.g., 'cat') or unrelated (e.g.'hammer') to the depicted concepts. The distractors were (a) German words, (b) novel words that the participants had learned earlier, or (c) unknown pseudowords. 
 
 <center>
 ![FigName](pwi.png){width=300px}
@@ -57,7 +57,7 @@ This file contains data from a picture-word interference task. In this task, Ger
 - Compared to semantically unrelated German distractors, German distractors from the same semantic category will slow picture naming response times
 - Compared to unknown pseudowords, German semantically unrelated distractors will slow picture naming response times
 
-The data we just loaded contains the following information:
+The data we just loaded contains the following information (only relevant columns explained):
 
 - `Subj`: Participant ID (there were 60 participants in total)
 - `List`: Which list the participant received (1-5)
@@ -72,5 +72,34 @@ The data we just loaded contains the following information:
 - `Accuracy`: `0` for incorrect responses, `1` for correct responses
 - `RT`: response times
 
+Because our first two hypotheses only concern German and unknown pseudoword distractors, we will restrict the dataset:
 
 
+```{r}
+data2 <- data %>%
+  filter(Cond == "SemRelG" | Cond == "SemUnRelG" | Cond == "Baseline")
+```
+
+Next, adjust factor levels for the independent variable and random terms:
+
+```{r}
+data2$Cond <- factor(data2$Cond)
+levels(data2$Cond)
+
+data2$Subj <- factor(data2$Subj)
+data2$TargetAnswer <- factor(data2$TargetAnswer)
+```
+
+# Check data
+
+This step is essential and should not be neglected as it allows you to ensure that your data looks as it should. You can do it in any way you want. I often used the function `xtabs()`, for example:
+
+```{r}
+xtabs(~ Subj + List,data2) 
+xtabs(~ Subj + Cond,data2) 
+xtabs(~ List + Cond,data2) 
+xtabs(~ Cond + DistLC,data2) 
+xtabs(~ List + DistLC,data2) 
+```
+
+# Prepare data for analysis
