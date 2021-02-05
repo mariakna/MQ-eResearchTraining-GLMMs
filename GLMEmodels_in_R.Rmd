@@ -13,26 +13,39 @@ output:
 fontsize: 16pt
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-## R Markdown
+# Load required packages
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r, results = "hide"}
+rm(list=ls())
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+library("openxlsx")
+library("Rmisc")
+library("tidyverse")
+library("lme4")
+library("car")
+library("MASS")
+library("scales")
+library("lmerTest")
+library("sjmisc")
+library("sjPlot")
+library("ggsignif")
+library("RColorBrewer")
 ```
 
-## Including Plots
+# Load the data
 
-You can also embed plots, for example:
+Data that we will be using today is publicly available [on my OSF page](https://osf.io/g7ftz/) as well as [on GitHub](https://github.com/mariakna/MQ-eResearchTraning--G-LMEmodels).
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+Download the file *pwiExp.xlsx*, save it in a directory of your choice, make this directory your working directory by using the command `setwd()` and load the file as shown below:
+
+```{r}
+# load full dataset:
+data_complete <- read.xlsx("pwi.xlsx", sheet = 1)
+# keep experimental items only:
+data <- data_complete %>%
+  filter(ItemType == "Exp")
 ```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
