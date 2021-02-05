@@ -46,16 +46,13 @@ Download the file *pwiExp.xlsx*, save it in a directory of your choice, make thi
 data <- read.xlsx("pwiExp.xlsx", sheet = 1)
 ```
 
+## Data description
+
 This file contains data from a picture-word interference task. In this task, German native speakers named (in German) pictures of familiar concepts (e.g., elephant) with superimposed written word distractors. The distractors were either semantically related (e.g., 'cat') or unrelated (e.g.'hammer') to the depicted concepts. The distractors were (a) German words, (b) novel words that the participants had learned earlier, or (c) unknown pseudowords. 
 
 <center>
 ![FigName](pwi.png){width=300px}
 </center>
-
-**Hypotheses 1 & 2:**
-
-- Compared to semantically unrelated German distractors, German distractors from the same semantic category will slow picture naming response times
-- Compared to unknown pseudowords, German semantically unrelated distractors will slow picture naming response times
 
 The data we just loaded contains the following information (only relevant columns explained):
 
@@ -71,6 +68,19 @@ The data we just loaded contains the following information (only relevant column
 - `Response`: participant's response
 - `Accuracy`: `0` for incorrect responses, `1` for correct responses
 - `RT`: response times
+
+<style>
+div.blue{background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Hypotheses 1 & 2:**
+
+- Compared to semantically unrelated German distractors, German distractors from the same semantic category will slow picture naming response times
+- Compared to unknown pseudowords, German semantically unrelated distractors will slow picture naming response times
+
+</div>
+<p>  </p>
 
 Because our first two hypotheses only concern German and unknown pseudoword distractors, we will restrict the dataset:
 
@@ -90,7 +100,7 @@ data2$Subj <- factor(data2$Subj)
 data2$TargetAnswer <- factor(data2$TargetAnswer)
 ```
 
-# Check data
+# Inspect data
 
 This step is essential and should not be neglected as it allows you to ensure that your data looks as it should. You can do it in any way you want. I often used the function `xtabs()`, for example:
 
@@ -103,3 +113,53 @@ xtabs(~ List + DistLC,data2)
 ```
 
 # Prepare data for analysis
+
+## Remove incorrect responses
+
+We will run our analysis on correct responses only so we first need to check accuracy and exclude observations with incorrect responses.
+
+Let's look at overall accuracy first:
+
+```{r}
+ftable(data2$Accuracy)
+```
+
+And now accuracy per condition:
+
+```{r}
+(Accuracy <- summarySEwithin(data2, measurevar = "Accuracy", withinvars = "Cond",
+                       idvar = "Subj", na.rm = FALSE, conf.interval = .95))
+```
+
+**Note:** The function `summarySEwithin` is a good (although not yet widely accepted) method to summarise data for experiments with a within-subjects design. The standard SE formula
+
+$$
+\sigma_{\overline{x}} = \frac{s}{\sqrt{n}}
+$$
+
+does  not take into  account  that there are multiple  data  points  from  each  participant  and, instead,  summarises  the  variability  across  all  observations  as  if  they  were  independent. Similarly, aggregating the data and calculating averages per participant per condition would conflate variability associated with each participant’s performance and random error with the variability  associated  with  the  experimental  manipulation. One method  to  compute  standard error while also disentangling these two sources of variability was described in [Morey (2008)](http://pcl.missouri.edu/sites/default/files/morey.2008.pdf) and later implemented in the [Rmisc package](http://www.cookbook-r.com/Graphs/Plotting_means_and_error_bars_(ggplot2)/) in R by Ryan Hope. 
+
+Luckily, the participants are at ceiling! We can now restrict the data to correct responses:
+
+```{r}
+dataCorr <- data2 %>%
+  filter(Accuracy == 1)
+```
+
+## Data trimming
+
+There are many ways to do it, and it often depends on your research question and your knowledge about the processes you are studying. For example, in word production, it often makes sense to remove data points with super fast and super slow responses. 
+
+I quite like the approach of keeping as many observations as you can and trying to model them so I often start with inspecting the data distribution and only removing those data points that clearly stand out:
+
+```{r}
+plot(density(dataCorr$RT))
+```
+
+Based on the data distribution and what we know about picture naming, we remove responses faster than 300ms and slower than 2000ms. 
+
+```{r}
+dataCorr2 <- dataCorr %>%
+ filter(RT > 300 & RT < 2000) # 12 obs removed
+```
+

@@ -1533,8 +1533,8 @@ library(&quot;sjPlot&quot;)
 library(&quot;ggsignif&quot;)
 library(&quot;RColorBrewer&quot;)</code></pre>
 </div>
-<div id="load-the-data" class="section level1">
-<h1>Load the data</h1>
+<div id="load-data" class="section level1">
+<h1>Load data</h1>
 <p>Data that we will be using today is publicly available <a href="https://osf.io/g7ftz/">on my OSF page</a> as well as <a href="https://github.com/mariakna/MQ-eResearchTraning--G-LMEmodels">on GitHub</a>.</p>
 <p>Download the file <em>pwiExp.xlsx</em>, save it in a directory of your choice, make this directory your working directory by using the command <code>setwd()</code> and load the file as shown below:</p>
 <pre class="r"><code>data &lt;- read.xlsx(&quot;pwiExp.xlsx&quot;, sheet = 1)</code></pre>
@@ -1547,7 +1547,7 @@ library(&quot;RColorBrewer&quot;)</code></pre>
 <li>Compared to semantically unrelated German distractors, German distractors from the same semantic category will slow picture naming response times</li>
 <li>Compared to unknown pseudowords, German semantically unrelated distractors will slow picture naming response times</li>
 </ul>
-<p>The data we just loaded contains the following information:</p>
+<p>The data we just loaded contains the following information (only relevant columns explained):</p>
 <ul>
 <li><code>Subj</code>: Participant ID (there were 60 participants in total)</li>
 <li><code>List</code>: Which list the participant received (1-5)</li>
@@ -1562,6 +1562,170 @@ library(&quot;RColorBrewer&quot;)</code></pre>
 <li><code>Accuracy</code>: <code>0</code> for incorrect responses, <code>1</code> for correct responses</li>
 <li><code>RT</code>: response times</li>
 </ul>
+<p>Because our first two hypotheses only concern German and unknown pseudoword distractors, we will restrict the dataset:</p>
+<pre class="r"><code>data2 &lt;- data %&gt;%
+  filter(Cond == &quot;SemRelG&quot; | Cond == &quot;SemUnRelG&quot; | Cond == &quot;Baseline&quot;)</code></pre>
+<p>Next, adjust factor levels for the independent variable and random terms:</p>
+<pre class="r"><code>data2$Cond &lt;- factor(data2$Cond)
+levels(data2$Cond)</code></pre>
+<pre><code>## [1] &quot;Baseline&quot;  &quot;SemRelG&quot;   &quot;SemUnRelG&quot;</code></pre>
+<pre class="r"><code>data2$Subj &lt;- factor(data2$Subj)
+data2$TargetAnswer &lt;- factor(data2$TargetAnswer)</code></pre>
+</div>
+<div id="check-data" class="section level1">
+<h1>Check data</h1>
+<p>This step is essential and should not be neglected as it allows you to ensure that your data looks as it should. You can do it in any way you want. I often used the function <code>xtabs()</code>, for example:</p>
+<pre class="r"><code>xtabs(~ Subj + List,data2) </code></pre>
+<pre><code>##     List
+## Subj  1  2  3  4  5
+##   4   0  0  0  0 72
+##   5   0  0  0  0 72
+##   6   0  0 72  0  0
+##   8   0  0  0 72  0
+##   9   0 72  0  0  0
+##   10  0  0  0 72  0
+##   11  0 72  0  0  0
+##   12  0 72  0  0  0
+##   15  0 72  0  0  0
+##   16  0  0  0 72  0
+##   17  0  0  0  0 72
+##   20  0  0  0  0 72
+##   21  0 72  0  0  0
+##   22  0  0 72  0  0
+##   23  0  0 72  0  0
+##   24  0  0  0  0 72
+##   25  0  0 72  0  0
+##   26  0  0  0  0 72
+##   28  0 72  0  0  0
+##   29  0  0  0  0 72
+##   30  0 72  0  0  0
+##   31  0  0 72  0  0
+##   33  0  0  0  0 72
+##   34  0  0  0 72  0
+##   35  0  0  0  0 72
+##   36  0  0 72  0  0
+##   38  0  0 72  0  0
+##   39  0  0  0 72  0
+##   40  0  0  0 72  0
+##   41  0  0  0 72  0
+##   42  0  0 72  0  0
+##   43  0 72  0  0  0
+##   44  0 72  0  0  0
+##   45  0  0  0 72  0
+##   46  0  0 72  0  0
+##   47 72  0  0  0  0
+##   48  0  0  0  0 72
+##   49  0 72  0  0  0
+##   50  0 72  0  0  0
+##   51  0  0 72  0  0
+##   52  0  0  0  0 72
+##   53 72  0  0  0  0
+##   54  0  0  0 72  0
+##   55  0  0  0 72  0
+##   56  0  0  0  0 72
+##   57  0  0 72  0  0
+##   58 72  0  0  0  0
+##   59  0  0  0 72  0
+##   60  0 72  0  0  0
+##   61  0  0 72  0  0
+##   62  0  0  0 72  0
+##   63 72  0  0  0  0
+##   64 72  0  0  0  0
+##   65 72  0  0  0  0
+##   66 72  0  0  0  0
+##   67 72  0  0  0  0
+##   68 72  0  0  0  0
+##   69 72  0  0  0  0
+##   70 72  0  0  0  0
+##   71 72  0  0  0  0</code></pre>
+<pre class="r"><code>xtabs(~ Subj + Cond,data2) </code></pre>
+<pre><code>##     Cond
+## Subj Baseline SemRelG SemUnRelG
+##   4        24      24        24
+##   5        24      24        24
+##   6        24      24        24
+##   8        24      24        24
+##   9        24      24        24
+##   10       24      24        24
+##   11       24      24        24
+##   12       24      24        24
+##   15       24      24        24
+##   16       24      24        24
+##   17       24      24        24
+##   20       24      24        24
+##   21       24      24        24
+##   22       24      24        24
+##   23       24      24        24
+##   24       24      24        24
+##   25       24      24        24
+##   26       24      24        24
+##   28       24      24        24
+##   29       24      24        24
+##   30       24      24        24
+##   31       24      24        24
+##   33       24      24        24
+##   34       24      24        24
+##   35       24      24        24
+##   36       24      24        24
+##   38       24      24        24
+##   39       24      24        24
+##   40       24      24        24
+##   41       24      24        24
+##   42       24      24        24
+##   43       24      24        24
+##   44       24      24        24
+##   45       24      24        24
+##   46       24      24        24
+##   47       24      24        24
+##   48       24      24        24
+##   49       24      24        24
+##   50       24      24        24
+##   51       24      24        24
+##   52       24      24        24
+##   53       24      24        24
+##   54       24      24        24
+##   55       24      24        24
+##   56       24      24        24
+##   57       24      24        24
+##   58       24      24        24
+##   59       24      24        24
+##   60       24      24        24
+##   61       24      24        24
+##   62       24      24        24
+##   63       24      24        24
+##   64       24      24        24
+##   65       24      24        24
+##   66       24      24        24
+##   67       24      24        24
+##   68       24      24        24
+##   69       24      24        24
+##   70       24      24        24
+##   71       24      24        24</code></pre>
+<pre class="r"><code>xtabs(~ List + Cond,data2) </code></pre>
+<pre><code>##     Cond
+## List Baseline SemRelG SemUnRelG
+##    1      288     288       288
+##    2      288     288       288
+##    3      288     288       288
+##    4      288     288       288
+##    5      288     288       288</code></pre>
+<pre class="r"><code>xtabs(~ Cond + DistLC,data2) </code></pre>
+<pre><code>##            DistLC
+## Cond         Fam Untrained
+##   Baseline     0      1440
+##   SemRelG   1440         0
+##   SemUnRelG 1440         0</code></pre>
+<pre class="r"><code>xtabs(~ List + DistLC,data2) </code></pre>
+<pre><code>##     DistLC
+## List Fam Untrained
+##    1 576       288
+##    2 576       288
+##    3 576       288
+##    4 576       288
+##    5 576       288</code></pre>
+</div>
+<div id="prepare-data-for-analysis" class="section level1">
+<h1>Prepare data for analysis</h1>
 </div>
 
 
