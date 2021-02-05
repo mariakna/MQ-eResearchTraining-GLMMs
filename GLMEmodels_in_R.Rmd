@@ -163,3 +163,13 @@ dataCorr2 <- dataCorr %>%
  filter(RT > 300 & RT < 2000) # 12 obs removed
 ```
 
+# Contrast coding
+
+# Transform or not transform?
+
+# Descriptives and plots
+
+# Fit the model
+
+# 
+
