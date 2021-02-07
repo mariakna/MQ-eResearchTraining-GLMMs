@@ -38,7 +38,7 @@ library("RColorBrewer")
 
 # Load data
 
-Data that we will be using today is publicly available [on my OSF page](https://osf.io/g7ftz/) as well as [on GitHub](https://github.com/mariakna/MQ-eResearchTraning--G-LMEmodels).
+Data that we will be using today is publicly available [here](https://github.com/mariakna/MQ-eResearchTraning--G-LMEmodels).
 
 Download the file *pwiExp.xlsx*, save it in a directory of your choice, make this directory your working directory by using the command `setwd()` and load the file as shown below:
 
