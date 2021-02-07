@@ -84,7 +84,6 @@ div.blue{background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
 
 Because our first two hypotheses only concern German and unknown pseudoword distractors, we will restrict the dataset:
 
-
 ```{r}
 data2 <- data %>%
   filter(Cond == "SemRelG" | Cond == "SemUnRelG" | Cond == "Baseline")
@@ -164,6 +163,192 @@ dataCorr2 <- dataCorr %>%
 ```
 
 # Contrast coding
+
+<style>
+div.blue{background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Hypotheses 1 & 2:**
+
+- Compared to semantically unrelated German distractors, German distractors from the same semantic category will slow picture naming response times
+- Compared to unknown pseudowords, German semantically unrelated distractors will slow picture naming response times
+
+</div>
+<p>  </p>
+
+How can we test these hypotheses?
+
+1. We could fit two separate models, one testing the first hypothesis (contrast between semantically related and unrelated distractors) and the other testing the second hypothesis (contrast between semantically unrelated and uknown pseudoword distractors)
+
+2. We could fit one model testing both hypotheses (and contrasts) simultaneously.
+
+Whatever we choose, we need to code the specified contrasts first. Understanding of contrast coding is essential, and I will now show you why.
+
+## Option 1: Treatment vs. sum contrasts
+
+Imagine we opt for option 1 and restrict our dataset to data points with semantically related and unrelated distractors:
+
+```{r}
+dataOpt1 <- dataCorr2 %>%
+  filter(Cond == "SemRelG" | Cond == "SemUnRelG")
+```
+
+Don't forget to adjust the levels of `Cond`:
+
+```{r}
+levels(dataOpt1$Cond) # Baseline is still included
+dataOpt1$Cond <- factor(dataOpt1$Cond)
+levels(dataOpt1$Cond) # Baseline is no longer there
+```
+
+
+Now imagine we do not know anything about contrast coding and we simply fit the model without giving it much thought (don't worry about not including random terms at the moment:
+
+```{r}
+model1 <- lm(RT ~ Cond, data = dataOpt1)
+
+round(summary(model1)$coef,3)
+```
+
+How does R arrive at these particular values for the intercept and slope? We can find this out by inspecting the current contrasts of the factor `Cond` using the `contrasts()` command:
+
+```{r}
+contrasts(dataOpt1$Cond)
+```
+
+The default in R, often called **dummy coding**, is to code factors using treatment contrasts, whereby factor levels are ordered alphabetically. That's why level `SemRelG` is coded as 0 and level `SemUnRelG` is coded as 1. 
+
+Now, what does that mean for our model?
+
+$$
+RT \sim \beta_0 + \beta_1*Cond 
+$$ 
+
+- Intercept $\beta_0$ is the estimated value (RT) for `SemRelG` 
+- Slope $\beta_1$ is the estimated difference between the means of the two levels (i.e., `SemUnRelG`-`SemRelG`). The sign of the slope is negative because RTs are slower in `SemRelG`
+
+$$
+RT_{Related} = 847 - 0*27 = 847\\
+RT_{Unrelated} = 847 - 1*27  = 820
+$$ 
+
+From a theoretical point of view, the intercept in the treatment assesses the average response in the baseline condition (in this case, in the semantically related condition), while the slope tests the difference between condition means. This also means that the intercept expresses a null hypothesis that is of no interest to us: that the mean in condition `SemRelG` is 0:
+
+$$
+H_0: \beta_0 = 0\\
+H_0: \mu_{Unrelated} - \mu_{Related} = 0
+$$
+
+This contrast coding does not reflect the comparisons we would like to make and so does not correspond to the theoretical knowledge about how cognitive processes work. Therefore, it is better to use  **sum contast coding** instead:
+
+```{r}
+dataOpt1$Condition <- ifelse(dataOpt1$Cond == "SemRelG", -1, 1)
+
+# we can also do:
+contrasts(dataOpt1$Cond) <- c(-1,+1)
+contrasts(dataOpt1$Cond)
+```
+
+Now, `SemRelG` is coded as -1 and `SemUnRelG` is coded as 1. What do the intercept and the slope represent now?
+
+```{r}
+model2 <- lm(RT ~ Cond, data = dataOpt1)
+
+round(summary(model2)$coef,3)
+```
+
+- Intercept $\beta_0$ is now the estimated mean of the two conditions
+- Slope $\beta_1$ is still the estimated difference between the means of the two conditions (i.e., `SemUnRelG`-`SemRelG`)
+
+$$
+RT_{GrandMean} = 834 - 0*14 = 834\\
+RT_{Unrelated} = 834 - 1*14  = 820\\
+RT_{Related} = 834 + 1*14  = 848\\
+$$
+Importantly, while the slope still assesses the difference in condition means, the intercept now tests the null hypothesis that the average of the two conditions is 0:
+
+$$
+H_0: \frac{\mu_{Unrelated} + \mu_{Related}}{2} = 0\\
+H_0: \mu_{Unrelated} - \mu_{Related} = 0
+$$
+To summarise,
+
+<style>
+div.blue{background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+- Treatment contrasts compare one or more means against some (arbitrarily chosen by default in R) baseline condition.
+- Sum contrasts compare a condition's mean against the grand mean. If we only have two conditions, this basically tests whether the two condition's means are identical.
+
+</div>
+<p>  </p>
+
+## Option 2
+
+Let us now think how we can test the two contrats (related vs. unrelated, and unrelated vs. unknown) in one model.
+
+Basically, we want to code the factor `Cond` in such a way so that, for the first comparison, it contrasts the semantically related condition with the semantically unrelated condition while it disregards the unknown pseudoword condition, and, for the second comparison, it contrasts the unrelated condition with the unknown condition while ignoring the related condition.
+
+Contrast 1:
+
+$$
+H_0: \mu_{Unrelated} - \mu_{Related} = 0
+$$
+Contrast 2:
+
+$$
+H_0: \mu_{Unrelated} - \mu_{Unknown} = 0
+$$
+
+And the null hypothesis for the intercept:
+
+$$
+H_0: \frac{\mu_{Unrelated} + \mu_{Related} + \mu_{Unknown}}{3} = 0\\
+H_0: \frac{1}{3}{\mu_{Unrelated} + \frac{1}{3}\mu_{Related} + \frac{1}{3}\mu_{Unknown} = 0
+$$
+
+We can summarise this as follows:
+
+| Cond      | Contrast 1  | Contrast 2  | Intercept |
+|-----------|-------------|-------------|-----------|
+| SemRelG   | 1           | 0           | 1/3       |
+| SemUnRelG | -1          | -1          | 1/3       |
+| Baseline  | 0           | 0           | 1/3       |
+
+and store this in a **hypothesis matrix**:
+
+```{r}
+(fractions(t(matrix <- rbind(int = 1/3, 
+                       c1 = c(Baseline = 0, SemRelG = 1, SemUnRelG = -1),
+                       c2 = c(Baseline = 1, SemRelG = 0, SemUnRelG = -1)))))
+```
+
+To obtain a contrast matrix necessary to test these hypotheses in a linear model, this matrix has to be inverted (see [(Friendly, Fox & Chalmers, 2018](https://cran.r-project.org/web/packages/matlib/vignettes/ginv.html) and [Schad et al., 2019](https://arxiv.org/abs/1807.10451) for more detail):
+
+```{r}
+# function that formats the output of ginv():
+ginv2 <- function(x)
+ fractions(provideDimnames(ginv(x), base = dimnames(x)[2:1]))
+
+# Invert matrix:
+(matrix2 <- ginv2(matrix))
+# Assign matrix to variable Cond:
+(contrasts(dataCorr2$Cond) <- matrix2[, 2:3])
+```
+
+Now we only need to adjust the dataset to be able to convert from a factor-based random-effects structure to a vector-valued one:
+
+```{r}
+m0 <- lmer(RT ~ Cond + (1 + Cond||Subj) + (1 + Cond||TargetAnswer), data = dataCorr2)
+
+mat <- model.matrix(m0)
+dataCorr2$SemRel.SemUnRel <- mat[, 2]
+dataCorr2$Bas.SemUnRel <- mat[, 3]
+
+dataCorr2[1:5,18:ncol(dataCorr2)]
+```
 
 # Transform or not transform?
 

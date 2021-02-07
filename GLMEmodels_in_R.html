@@ -1511,7 +1511,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Data analysis using (generalised) linear mixed effects models in R</h1>
 <h4 class="author">Maria Korochkina</h4>
-<h4 class="date">Last update: 05 February, 2021</h4>
+<h4 class="date">Last update: 07 February, 2021</h4>
 
 </div>
 
@@ -1535,7 +1535,7 @@ library(&quot;RColorBrewer&quot;)</code></pre>
 </div>
 <div id="load-data" class="section level1">
 <h1>Load data</h1>
-<p>Data that we will be using today is publicly available <a href="https://osf.io/g7ftz/">on my OSF page</a> as well as <a href="https://github.com/mariakna/MQ-eResearchTraning--G-LMEmodels">on GitHub</a>.</p>
+<p>Data that we will be using today is publicly available <a href="https://github.com/mariakna/MQ-eResearchTraning--G-LMEmodels">here</a>.</p>
 <p>Download the file <em>pwiExp.xlsx</em>, save it in a directory of your choice, make this directory your working directory by using the command <code>setwd()</code> and load the file as shown below:</p>
 <pre class="r"><code>data &lt;- read.xlsx(&quot;pwiExp.xlsx&quot;, sheet = 1)</code></pre>
 <div id="data-description" class="section level2">
@@ -1662,6 +1662,220 @@ data2$TargetAnswer &lt;- factor(data2$TargetAnswer)</code></pre>
 <pre class="r"><code>dataCorr2 &lt;- dataCorr %&gt;%
  filter(RT &gt; 300 &amp; RT &lt; 2000) # 12 obs removed</code></pre>
 </div>
+</div>
+<div id="contrast-coding" class="section level1">
+<h1>Contrast coding</h1>
+<style>
+div.blue{background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class="blue">
+<p><strong>Hypotheses 1 &amp; 2:</strong></p>
+<ul>
+<li>Compared to semantically unrelated German distractors, German distractors from the same semantic category will slow picture naming response times</li>
+<li>Compared to unknown pseudowords, German semantically unrelated distractors will slow picture naming response times</li>
+</ul>
+</div>
+<p>
+</p>
+<p>How can we test these hypotheses?</p>
+<ol style="list-style-type: decimal">
+<li><p>We could fit two separate models, one testing the first hypothesis (contrast between semantically related and unrelated distractors) and the other testing the second hypothesis (contrast between semantically unrelated and uknown pseudoword distractors)</p></li>
+<li><p>We could fit one model testing both hypotheses (and contrasts) simultaneously.</p></li>
+</ol>
+<p>Whatever we choose, we need to code the specified contrasts first. Understanding of contrast coding is essential, and I will now show you why.</p>
+<div id="option-1-treatment-vs.-sum-contrasts" class="section level2">
+<h2>Option 1: Treatment vs. sum contrasts</h2>
+<p>Imagine we opt for option 1 and restrict our dataset to data points with semantically related and unrelated distractors:</p>
+<pre class="r"><code>dataOpt1 &lt;- dataCorr2 %&gt;%
+  filter(Cond == &quot;SemRelG&quot; | Cond == &quot;SemUnRelG&quot;)</code></pre>
+<p>Don’t forget to adjust the levels of <code>Cond</code>:</p>
+<pre class="r"><code>levels(dataOpt1$Cond) # Baseline is still included</code></pre>
+<pre><code>## [1] &quot;Baseline&quot;  &quot;SemRelG&quot;   &quot;SemUnRelG&quot;</code></pre>
+<pre class="r"><code>dataOpt1$Cond &lt;- factor(dataOpt1$Cond)
+levels(dataOpt1$Cond) # Baseline is no longer there</code></pre>
+<pre><code>## [1] &quot;SemRelG&quot;   &quot;SemUnRelG&quot;</code></pre>
+<p>Now imagine we do not know anything about contrast coding and we simply fit the model without giving it much thought (don’t worry about not including random terms at the moment:</p>
+<pre class="r"><code>model1 &lt;- lm(RT ~ Cond, data = dataOpt1)
+
+round(summary(model1)$coef,3)</code></pre>
+<pre><code>##               Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept)    847.494      6.455 131.299    0.000
+## CondSemUnRelG  -27.211      9.089  -2.994    0.003</code></pre>
+<p>How does R arrive at these particular values for the intercept and slope? We can find this out by inspecting the current contrasts of the factor <code>Cond</code> using the <code>contrasts()</code> command:</p>
+<pre class="r"><code>contrasts(dataOpt1$Cond)</code></pre>
+<pre><code>##           SemUnRelG
+## SemRelG           0
+## SemUnRelG         1</code></pre>
+<p>The default in R, often called <strong>dummy coding</strong>, is to code factors using treatment contrasts, whereby factor levels are ordered alphabetically. That’s why level <code>SemRelG</code> is coded as 0 and level <code>SemUnRelG</code> is coded as 1.</p>
+<p>Now, what does that mean for our model?</p>
+<p><span class="math display">\[
+RT \sim \beta_0 + \beta_1*Cond 
+\]</span></p>
+<ul>
+<li>Intercept <span class="math inline">\(\beta_0\)</span> is the estimated value (RT) for <code>SemRelG</code></li>
+<li>Slope <span class="math inline">\(\beta_1\)</span> is the estimated difference between the means of the two levels (i.e., <code>SemUnRelG</code>-<code>SemRelG</code>). The sign of the slope is negative because RTs are slower in <code>SemRelG</code></li>
+</ul>
+<p><span class="math display">\[
+RT_{Related} = 847 - 0*27 = 847\\
+RT_{Unrelated} = 847 - 1*27  = 820
+\]</span></p>
+<p>From a theoretical point of view, the intercept in the treatment assesses the average response in the baseline condition (in this case, in the semantically related condition), while the slope tests the difference between condition means. This also means that the intercept expresses a null hypothesis that is of no interest to us: that the mean in condition <code>SemRelG</code> is 0:</p>
+<p><span class="math display">\[
+H_0: \beta_0 = 0\\
+H_0: \mu_{Unrelated} - \mu_{Related} = 0
+\]</span></p>
+<p>This contrast coding does not reflect the comparisons we would like to make and so does not correspond to the theoretical knowledge about how cognitive processes work. Therefore, it is better to use <strong>sum contast coding</strong> instead:</p>
+<pre class="r"><code>dataOpt1$Condition &lt;- ifelse(dataOpt1$Cond == &quot;SemRelG&quot;, -1, 1)
+
+# we can also do:
+contrasts(dataOpt1$Cond) &lt;- c(-1,+1)
+contrasts(dataOpt1$Cond)</code></pre>
+<pre><code>##           [,1]
+## SemRelG     -1
+## SemUnRelG    1</code></pre>
+<p>Now, <code>SemRelG</code> is coded as -1 and <code>SemUnRelG</code> is coded as 1. What do the intercept and the slope represent now?</p>
+<pre class="r"><code>model2 &lt;- lm(RT ~ Cond, data = dataOpt1)
+
+round(summary(model2)$coef,3)</code></pre>
+<pre><code>##             Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept)  833.888      4.545 183.485    0.000
+## Cond1        -13.605      4.545  -2.994    0.003</code></pre>
+<ul>
+<li>Intercept <span class="math inline">\(\beta_0\)</span> is now the estimated mean of the two conditions</li>
+<li>Slope <span class="math inline">\(\beta_1\)</span> is still the estimated difference between the means of the two conditions (i.e., <code>SemUnRelG</code>-<code>SemRelG</code>)</li>
+</ul>
+<p><span class="math display">\[
+RT_{GrandMean} = 834 - 0*14 = 834\\
+RT_{Unrelated} = 834 - 1*14  = 820\\
+RT_{Related} = 834 + 1*14  = 848\\
+\]</span> Importantly, while the slope still assesses the difference in condition means, the intercept now tests the null hypothesis that the average of the two conditions is 0:</p>
+<p><span class="math display">\[
+H_0: \frac{\mu_{Unrelated} + \mu_{Related}}{2} = 0\\
+H_0: \mu_{Unrelated} - \mu_{Related} = 0
+\]</span> To summarise,</p>
+<style>
+div.blue{background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class="blue">
+<ul>
+<li>Treatment contrasts compare one or more means against some (arbitrarily chosen by default in R) baseline condition.</li>
+<li>Sum contrasts compare a condition’s mean against the grand mean. If we only have two conditions, this basically tests whether the two condition’s means are identical.</li>
+</ul>
+</div>
+<p>
+</p>
+</div>
+<div id="option-2" class="section level2">
+<h2>Option 2</h2>
+<p>Let us now think how we can test the two contrats (related vs. unrelated, and unrelated vs. unknown) in one model.</p>
+<p>Basically, we want to code the factor <code>Cond</code> in such a way so that, for the first comparison, it contrasts the semantically related condition with the semantically unrelated condition while it disregards the unknown pseudoword condition, and, for the second comparison, it contrasts the unrelated condition with the unknown condition while ignoring the related condition.</p>
+<p>Contrast 1:</p>
+<p><span class="math display">\[
+H_0: \mu_{Unrelated} - \mu_{Related} = 0
+\]</span> Contrast 2:</p>
+<p><span class="math display">\[
+H_0: \mu_{Unrelated} - \mu_{Unknown} = 0
+\]</span></p>
+<p>And the null hypothesis for the intercept:</p>
+<p><span class="math display">\[
+H_0: \frac{\mu_{Unrelated} + \mu_{Related} + \mu_{Unknown}}{3} = 0\\
+H_0: \frac{1}{3}{\mu_{Unrelated} + \frac{1}{3}\mu_{Related} + \frac{1}{3}\mu_{Unknown} = 0
+\]</span></p>
+<p>We can summarise this as follows:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Cond</th>
+<th>Contrast 1</th>
+<th>Contrast 2</th>
+<th>Intercept</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>SemRelG</td>
+<td>1</td>
+<td>0</td>
+<td>1/3</td>
+</tr>
+<tr class="even">
+<td>SemUnRelG</td>
+<td>-1</td>
+<td>-1</td>
+<td>1/3</td>
+</tr>
+<tr class="odd">
+<td>Baseline</td>
+<td>0</td>
+<td>0</td>
+<td>1/3</td>
+</tr>
+</tbody>
+</table>
+<p>and store this in a <strong>hypothesis matrix</strong>:</p>
+<pre class="r"><code>(fractions(t(matrix &lt;- rbind(int = 1/3, 
+                       c1 = c(Baseline = 0, SemRelG = 1, SemUnRelG = -1),
+                       c2 = c(Baseline = 1, SemRelG = 0, SemUnRelG = -1)))))</code></pre>
+<pre><code>##           int c1  c2 
+## Baseline  1/3   0   1
+## SemRelG   1/3   1   0
+## SemUnRelG 1/3  -1  -1</code></pre>
+<p>To obtain a contrast matrix necessary to test these hypotheses in a linear model, this matrix has to be inverted (see <a href="https://cran.r-project.org/web/packages/matlib/vignettes/ginv.html">(Friendly, Fox &amp; Chalmers, 2018</a> and <a href="https://arxiv.org/abs/1807.10451">Schad et al., 2019</a> for more detail):</p>
+<pre class="r"><code># function that formats the output of ginv():
+ginv2 &lt;- function(x)
+ fractions(provideDimnames(ginv(x), base = dimnames(x)[2:1]))
+
+# Invert matrix:
+(matrix2 &lt;- ginv2(matrix))</code></pre>
+<pre><code>##           int  c1   c2  
+## Baseline     1 -1/3  2/3
+## SemRelG      1  2/3 -1/3
+## SemUnRelG    1 -1/3 -1/3</code></pre>
+<pre class="r"><code># Assign matrix to variable Cond:
+(contrasts(dataCorr2$Cond) &lt;- matrix2[, 2:3])</code></pre>
+<pre><code>##           c1   c2  
+## Baseline  -1/3  2/3
+## SemRelG    2/3 -1/3
+## SemUnRelG -1/3 -1/3</code></pre>
+<p>Now we only need to adjust the dataset to be able to convert from a factor-based random-effects structure to a vector-valued one:</p>
+<pre class="r"><code>m0 &lt;- lmer(RT ~ Cond + (1 + Cond||Subj) + (1 + Cond||TargetAnswer), data = dataCorr2)
+
+mat &lt;- model.matrix(m0)
+dataCorr2$SemRel.SemUnRel &lt;- mat[, 2]
+dataCorr2$Bas.SemUnRel &lt;- mat[, 3]
+
+head(dataCorr2)</code></pre>
+<pre><code>##   Subj List BLOCK TRIAL ITEM ItemType      Cond TargetCatNum          TargetCat
+## 1    4    5     1     2    7      Exp   SemRelG            7     transportation
+## 2    4    5     1     9   23      Exp   SemRelG           14 electronic devices
+## 3    4    5     1    12  104      Exp  Baseline            7     transportation
+## 4    4    5     1    15   48      Exp SemUnRelG           15             plants
+## 5    4    5     1    16   97      Exp  Baseline            3         vegetables
+## 6    4    5     1    23   46      Exp SemUnRelG           13            insects
+##              PicID DistCatNum            DistCat    Dist    DistLC DistList
+## 1   bicycleSRG.png          7     transportation  Schiff       Fam        0
+## 2    laptopSRG.png         14 electronic devices Drucker       Fam        0
+## 3     planeBAS.png          0                  0   Garpe Untrained        0
+## 4      fernSUG.png         10            clothes    Rock       Fam        0
+## 5  eggplantBAS.png          0                  0 Schnilp Untrained        0
+## 6 bumblebeeSUG.png         10            clothes   Kleid       Fam        0
+##   DistSet TargetAnswer  Response Accuracy  RT SemRel.SemUnRel Bas.SemUnRel
+## 1       0      Fahrrad   Fahrrad        1 895       0.6666667   -0.3333333
+## 2       0       Laptop    Laptop        1 979       0.6666667   -0.3333333
+## 3       0     Flugzeug  Flugzeug        1 745      -0.3333333    0.6666667
+## 4       0         Farn      Farn        1 950      -0.3333333   -0.3333333
+## 5       0    Aubergine Aubergine        1 939      -0.3333333    0.6666667
+## 6       0       Hummel    Hummel        1 890      -0.3333333   -0.3333333</code></pre>
+</div>
+</div>
+<div id="transform-or-not-transform" class="section level1">
+<h1>Transform or not transform?</h1>
+</div>
+<div id="descriptives-and-plots" class="section level1">
+<h1>Descriptives and plots</h1>
+</div>
+<div id="fit-the-model" class="section level1">
+<h1>Fit the model</h1>
 </div>
 
 
