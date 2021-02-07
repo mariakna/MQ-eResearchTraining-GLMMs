@@ -1,4 +1,4 @@
-# MQ-eResearchTraning--G-LMEmodels
+# eResearchTraning: Data analysis using (generalised) linear mixed effects models in R
 Short webinar on how to fit (G)LME models in R (part of eResearch Training at MQ, Feb 18, 2021)
 
 ## Abstract
