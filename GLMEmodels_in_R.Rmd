@@ -325,7 +325,7 @@ and store this in a **hypothesis matrix**:
                        c2 = c(Baseline = 1, SemRelG = 0, SemUnRelG = -1)))))
 ```
 
-To obtain a contrast matrix necessary to test these hypotheses in a linear model, this matrix has to be inverted (see [(Friendly, Fox & Chalmers, 2018](https://cran.r-project.org/web/packages/matlib/vignettes/ginv.html) and [Schad et al., 2019](https://arxiv.org/abs/1807.10451) for more detail):
+To obtain a contrast matrix necessary to test these hypotheses in a linear model, this matrix has to be inverted (see [Friendly, Fox & Chalmers, 2018](https://cran.r-project.org/web/packages/matlib/vignettes/ginv.html) and [Schad et al., 2019](https://arxiv.org/abs/1807.10451) for more detail):
 
 ```{r}
 # function that formats the output of ginv():
@@ -352,7 +352,251 @@ dataCorr2[1:5,18:ncol(dataCorr2)]
 
 # Transform or not transform?
 
-# Descriptives and plots
+The core assumptions of the linear mixed effects models is that the residuals and random effect coefficients are independent and identically distributed. Ideally, the residuals should be normally distributed, and, if this assumption is violated, the model cannot be interpreted.
+
+
+```{r}
+m1 <- lm(RT ~ Cond, data = dataCorr2)
+hist(residuals(m1))
+qqPlot(residuals(m1))
+```
+
+A quantile-quntile (QQ) plot is a scatterplot, in which two sets of quantiles are plotted against each other. If both sets of quantiles came from the same distribution, the points should form a straight line. By default, `qqplot()` produces a normal QQ plot and so allows us to check whether the model residuals are normally distributed (you can also use `qqnorm()`).
+
+It would seem that the model residuals have more extreme values than would be expected if they were normally distributed.
+
+How can we deal with that? There are 2 options:
+
+- transfrom the data such that it satisfies the model assumptions
+- use generalised linear mixed effects models with a different (not normal) distribution
+
+There is a lot of controversy about which approach is best. If interested, you can take a look at [Lo & Andrews, 2015](https://www.frontiersin.org/articles/10.3389/fpsyg.2015.01171/full), [Donnelly & Verkuilen, 2017](https://www.sciencedirect.com/science/article/pii/S0749596X1630167X), [Pierre et al., 2018](https://onlinelibrary.wiley.com/doi/full/10.1002/ece3.3807), [De Boeck & Jeon, 2019](https://www.frontiersin.org/articles/10.3389/fpsyg.2019.00102/full), [Schramm & Rouder, 2019](https://psyarxiv.com/9ksa6/). Some researchers do both and only consider the effects significant if both models produced a significant outcome, e.g., [Brysbaert & Stevens, 2018](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6646942/).
+
+Let's try out both.
+
+## Option 1: Transform
+
+```{r}
+boxcox(m1)
+```
+
+The Box-Cox test suggests that we need an inverse transformation.
+
+```{r}
+# Add a new column transRT with inverse RTs:
+dataCorr3 <- dataCorr2 %>%
+  mutate(transRT = -10000/RT)
+# Check:
+plot(density(dataCorr3$transRT))
+qqnorm(dataCorr3$transRT) 
+# Fit a model on inverse RTs and check residuals:
+mInv <- lm(transRT ~ Cond, data = dataCorr3)
+hist(residuals(mInv))
+qqPlot(residuals(mInv))
+```
+
+## Option 2: Do not transform
+
+If we decide to continue with raw data, we will fit a generalised linear mixed effects model with a gamma distribution and identity link.
+
+The Gamma distribution is the sum of multiple exponential distributions. Basically, it models the probability that no event occurs until a certain period of time and, therefore, several serial stages of processing, each of which finishes with a time that is exponentially distributed (see e.g., [Van Zandt & Ratcliff, 1995](https://link.springer.com/article/10.3758/BF03214411)).
+
+In GLM and GLME models, fixed factors are treated as linear predictors of a function of the observed response rather than the observed response itself. Because we assume that RT is a direct measure of the time required to name a picture, the function binding the expected values of the DV and the effect of the predictor is the identity link. 
+
+# Summary statistics and plots
+
+Let's visualise the data before we fit the models.
+
+```{r}
+(RT <- summarySEwithin(dataCorr3, measurevar = "RT", withinvars = "Cond",
+                       idvar = "Subj", na.rm = FALSE, conf.interval = .95))
+```
+
+## Plot all conditions
+
+```{r}
+ggplot(RT, aes(x = Cond, y = RT, fill = Cond)) +
+  geom_bar(position = position_dodge(), stat = "identity",
+           color = "black",
+           size = .3) +
+  geom_errorbar(aes(ymin = RT-se, ymax = RT+se),
+                size = .3, width = .2,
+                position = position_dodge(.9)) +
+  xlab("Distractor condition") +
+  ylab("Response time (ms)") +
+  coord_cartesian(ylim = c(500,900)) +
+  theme_classic() +
+  theme(axis.title.x = element_text(size = rel(1.2), colour = "black"),
+        axis.title.y = element_text(size = rel(1.2), colour = "black"),
+        panel.background = element_rect(colour = "white"),
+        axis.text = element_text(size = rel(1), colour = "black"),
+        legend.text = element_text(size = rel(1), colour = "black"),
+        legend.title = element_text(size = rel(1.2), colour = "black"),
+        axis.line = element_line(colour = "black")) +
+     scale_fill_manual(name = "Distractor condition", 
+                     labels = c("Unknown pseudoword", "German sem. related", "German sem. unrelated"), 
+                     values = c("#D95F02", "#440154FF", "#35B779FF")) + guides(fill = FALSE) +
+  scale_x_discrete(labels = c("Unknown pseudoword", "German sem. related", "German sem. unrelated"))
+```
+
+## Plot contrast 1 (related vs. unrelated)
+
+```{r}
+dataG <- dataCorr3 %>%
+  filter(Cond == "SemRelG" | Cond == "SemUnRelG")
+dataG$Cond <- factor(dataG$Cond)
+
+RT1 <- summarySEwithin(dataG, measurevar = "RT", withinvars = "Cond",
+                       idvar = "Subj", na.rm = FALSE, conf.interval = .95)
+
+ggplot(RT1, aes(x = Cond, y = RT, fill = Cond)) +
+  geom_bar(position = position_dodge(), stat = "identity",
+           color = "black", 
+           size = .3) +
+  geom_errorbar(aes(ymin = RT-se, ymax = RT+se),
+                size = .3, width = .2,
+                position = position_dodge(.9)) +
+  xlab("Distractor condition") +
+  ylab("Response time (ms)") +
+  coord_cartesian(ylim = c(500,950)) +
+  theme_classic() +
+  theme(axis.title.x = element_text(size = rel(1.2), colour = "black"),
+        axis.title.y = element_text(size = rel(1.2), colour = "black"),
+        panel.background = element_rect(colour = "white"),
+        axis.text = element_text(size = rel(1), colour = "black"),
+        legend.text = element_text(size = rel(1), colour = "black"),
+        legend.title = element_text(size = rel(1.2), colour = "black"),
+        axis.line = element_line(colour = "black")) +
+      scale_fill_manual(name = "Distractor condition", 
+                     labels = c("German sem. related", "German sem. unrelated"), 
+                     values = c("#440154FF", "#35B779FF")) + guides(fill = FALSE) +
+  scale_x_discrete(labels = c("German sem. related", "German sem. unrelated"))
+```
+
+## Plot contrast 2 (unknown vs. unrelated)
+
+```{r}
+dataGU <- dataCorr3 %>%
+  filter(Cond == "SemUnRelG" | Cond == "Baseline")
+
+RT2 <- summarySEwithin(dataGU, measurevar = "RT", withinvars = "Cond",
+                       idvar = "Subj", na.rm = FALSE, conf.interval = .95)
+
+ggplot(RT2, aes(x = Cond, y = RT, fill = Cond)) +
+  geom_bar(position = position_dodge(), stat = "identity",
+           color = "black",
+           size = .3) +
+  geom_errorbar(aes(ymin = RT-se, ymax = RT+se),
+                size = .3, width = .2,
+                position = position_dodge(.9)) +
+  xlab("Distractor condition") +
+  ylab("Response time (ms)") +
+  coord_cartesian(ylim = c(500,900)) +
+  theme_classic() +
+  theme(axis.title.x = element_text(size = rel(1.2), colour = "black"),
+        axis.title.y = element_text(size = rel(1.2), colour = "black"),
+        panel.background = element_rect(colour = "white"),
+        axis.text = element_text(size = rel(1), colour = "black"),
+        legend.text = element_text(size = rel(1), colour = "black"),
+        legend.title = element_text(size = rel(1.2), colour = "black"),
+        axis.line = element_line(colour = "black")) +
+     scale_fill_manual(name = "Distractor condition", 
+                     labels = c("Unknown pseudoword", "German sem. unrelated"), 
+                     values = c("#D95F02", "#35B779FF")) + guides(fill = FALSE) +
+  scale_x_discrete(labels = c("Unknown pseudoword","German sem. unrelated"))
+```
 
 # Fit the model
 
+[Barr et al., 2013](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3881361/) have recommended to fit models with a maximal random effect structure, and many researchers do so. However, this often leads to overparametrisation such that resulting models are two complex and uninterpretable. An alternative approach would be to fit a model that **is** supported by the data [Bates et al., 2015](https://arxiv.org/abs/1506.04967).
+
+## Option 1 (transformed RTs)
+
+We start by fitting a model with a maximal structure and then simplify it using the Principled Component Analysis (PCA) of the random effects structure to determine the number of variance components and correlation parameters supported by the data.
+
+What is a maximal model?
+
+*Random effects for subjects:*
+
+  - the by-subjects adjustment to the grand mean 
+  - the by-subjects adjustment to the mean slope
+ 
+*Random effects for items:*
+
+  - the by-subjects adjustment to the grand mean 
+  - the by-subjects adjustment to the mean slope
+
+And the *residual error*.
+
+Mathematically, it looks like this:
+
+$$
+RT \sim \beta_0 + u_0 + w_0 + (\beta_1 + u_1 + w_1)*Cond + \varepsilon
+$$
+
+where 
+
+- $\beta_0$ is the intercept parameter
+
+- $\beta_1$ is the the slope parameter
+
+- $\varepsilon$ is the residual
+
+- `Cond` is the effect of Condition
+
+and the variance components are
+ 
+- $u_0$: adjustment to the intercept by subjects
+
+- $w_0$: adjustment to the intercept by items
+
+- $u_1$: adjustment to the slope by subjects
+
+- $w_1$: adjustment to the slope by items
+  
+with the correlations between the adjustments for the intercepts and slopes expressed in the following matrices
+
+\[
+\left( 
+\begin{array}{cc}
+u_0 \\ 
+u_1 
+\end{array} 
+\right) \sim \left(Normal _2\left(
+\begin{array} {cc}
+0 \\
+0
+\end{array}
+\right), \left[
+\begin{array}{cc}
+\sigma u_0^2 & \rho \sigma u_0\sigma u_1 \\ 
+\rho \sigma u_0\sigma u_1 & \sigma u_1^2
+\end{array}
+\right]
+\right)
+\]
+
+\[
+\left( 
+\begin{array}{cc}
+w_0 \\ 
+w_1 
+\end{array} 
+\right) \sim \left(Normal _2\left(
+\begin{array} {cc}
+0 \\
+0
+\end{array}
+\right), \left[
+\begin{array}{cc}
+\sigma w_0^2 & \rho \sigma w_0\sigma w_1 \\ 
+\rho \sigma w_0\sigma w_1 & \sigma w_1^2
+\end{array}
+\right]
+\right)
+\]
+
+where
+
+$\rho$ is the correlation parameter.
+  
