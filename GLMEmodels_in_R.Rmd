@@ -185,7 +185,7 @@ How can we test these hypotheses?
 
 Whatever we choose, we need to code the specified contrasts first. Understanding of contrast coding is essential, and I will now show you why.
 
-## Option 1: Treatment vs. sum contrasts
+## Option 1: Treatment vs. sum contrasts for a factor with 2 levels
 
 Imagine we opt for option 1 and restrict our dataset to data points with semantically related and unrelated distractors:
 
@@ -285,7 +285,7 @@ div.blue{background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
 </div>
 <p>  </p>
 
-## Option 2
+## Option 2: Sum contrasts for a factor with 3 levels
 
 Let us now think how we can test the two contrats (related vs. unrelated, and unrelated vs. unknown) in one model.
 
@@ -304,10 +304,13 @@ $$
 
 And the null hypothesis for the intercept:
 
-$$
-H_0: \frac{\mu_{Unrelated} + \mu_{Related} + \mu_{Unknown}}{3} = 0\\
-H_0: \frac{1}{3}{\mu_{Unrelated} + \frac{1}{3}\mu_{Related} + \frac{1}{3}\mu_{Unknown} = 0
-$$
+\begin{align}
+
+H_0 &= \frac{\mu_{Unrelated} + \mu_{Related} + \mu_{Unknown}}{3} \\
+&= \frac{1}{3} \mu_{Unrelated} + \frac{1}{3} \mu_{Related} + \frac{1}{3} \mu_{Unknown} \\
+&= 0
+
+\end{align}
 
 We can summarise this as follows:
 
