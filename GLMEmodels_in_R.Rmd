@@ -266,12 +266,14 @@ RT_{GrandMean} = 834 - 0*14 = 834\\
 RT_{Unrelated} = 834 - 1*14  = 820\\
 RT_{Related} = 834 + 1*14  = 848\\
 $$
+
 Importantly, while the slope still assesses the difference in condition means, the intercept now tests the null hypothesis that the average of the two conditions is 0:
 
 $$
 H_0: \frac{\mu_{Unrelated} + \mu_{Related}}{2} = 0\\
 H_0: \mu_{Unrelated} - \mu_{Related} = 0
 $$
+
 To summarise,
 
 <style>
