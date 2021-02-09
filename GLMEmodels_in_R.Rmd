@@ -343,7 +343,7 @@ ginv2 <- function(x)
 (contrasts(dataCorr2$Cond) <- matrix2[, 2:3])
 ```
 
-Now we only need to adjust the dataset to be able to convert from a factor-based random-effects structure to a vector-valued one:
+In the next step, we add two new columns to the original dataset to be able to convert from a factor-based random-effects structure to a vector-valued one:
 
 ```{r}
 m0 <- lmer(RT ~ Cond + (1 + Cond||Subj) + (1 + Cond||TargetAnswer), data = dataCorr2)
@@ -375,9 +375,23 @@ How can we deal with that? There are 2 options:
 - transfrom the data such that it satisfies the model assumptions
 - use generalised linear mixed effects models with a different (not normal) distribution
 
-There is a lot of controversy about which approach is best. If interested, you can take a look at [Lo & Andrews, 2015](https://www.frontiersin.org/articles/10.3389/fpsyg.2015.01171/full), [Donnelly & Verkuilen, 2017](https://www.sciencedirect.com/science/article/pii/S0749596X1630167X), [Pierre et al., 2018](https://onlinelibrary.wiley.com/doi/full/10.1002/ece3.3807), [De Boeck & Jeon, 2019](https://www.frontiersin.org/articles/10.3389/fpsyg.2019.00102/full), [Schramm & Rouder, 2019](https://psyarxiv.com/9ksa6/). Some researchers do both and only consider the effects significant if both models produced a significant outcome, e.g., [Brysbaert & Stevens, 2018](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6646942/).
+There is an active debate about which approach is best. 
 
-Let's try out both.
+The most important reasons for transforming the raw data have to do with some of the core properties of raw RTs (see e.g., [Schramm & Rouder, 2019](https://psyarxiv.com/9ksa6/) for more detail):
+
+1. RTs aee unimodal with a skewed upper tail
+2. Manipulations that slow RTs tend to increase both the mean and SD with relatively small effects in the skewed tail
+3. Effects across conditions may be hard to detect because there is a lot of trial-by-trial variability as well as variability across participants
+
+Due to these properties, many statisticians believe that transformations may help reduce skewness (by minimising the impact of outliers) and stabilise variance by maintaining good power. This, in turn, means that transformations might make it easier to assess small effects. 
+
+However, another property of RTs is that all RT distributions have a substantial shift away from zero. If such distributions are transformed, the shape and the scale of the resulting transformed distribution might be radically different from the orginal distribution of raw RTs. Furthermore, because the degree of variance is a function of the shift, transformations may work better for some paradigms than others.
+
+[Lo & Andrews, 2015](https://www.frontiersin.org/articles/10.3389/fpsyg.2015.01171/full) have argued that the best approach would be to analyse raw RTs with generalised linear mixed effects models, while [Schramm & Rouder, 2019](https://psyarxiv.com/9ksa6/) used data simulations to show that lognormal transformations do not offer any advantages as compared to raw data, while reciprocal transformations might even decrease the statistical power (albeit by a small margin). Some researchers argue that the best practice would be to conduct both types of analyses (on raw and transformed data) and only consider the effects significant if both models produced a significant outcome(e.g., [Brysbaert & Stevens, 2018](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6646942/)). 
+
+It is beyond the scope of today's webinar to discuss this in depth so, in the following sections, I will show you how to fit linear mixed effects models on both transformed and raw data. 
+
+If interested, please refer to i.a. [Donnelly & Verkuilen, 2017](https://www.sciencedirect.com/science/article/pii/S0749596X1630167X), [Pierre et al., 2018](https://onlinelibrary.wiley.com/doi/full/10.1002/ece3.3807) and [De Boeck & Jeon, 2019](https://www.frontiersin.org/articles/10.3389/fpsyg.2019.00102/full) for further discussion.
 
 ## Option 1: Transform
 
@@ -402,11 +416,13 @@ qqPlot(residuals(mInv))
 
 ## Option 2: Do not transform
 
-If we decide to continue with raw data, we will fit a generalised linear mixed effects model with a gamma distribution and identity link.
+In that case, we will fit a generalised linear mixed effects model with a gamma distribution and identity link.
 
-The Gamma distribution is the sum of multiple exponential distributions. Basically, it models the probability that no event occurs until a certain period of time and, therefore, several serial stages of processing, each of which finishes with a time that is exponentially distributed (see e.g., [Van Zandt & Ratcliff, 1995](https://link.springer.com/article/10.3758/BF03214411)).
+The choice of the gamma distribution is mainly motivated by considerations outlined in [Lo & Andrews (2015)](https://www.frontiersin.org/articles/10.3389/fpsyg.2015.01171/full). To summarise briefly:
 
-In GLM and GLME models, fixed factors are treated as linear predictors of a function of the observed response rather than the observed response itself. Because we assume that RT is a direct measure of the time required to name a picture, the function binding the expected values of the DV and the effect of the predictor is the identity link. 
+- The Gamma distribution is the sum of multiple exponential distributions. Basically, it models the probability that no event occurs until a certain period of time. Therefore, it could be conceptualised as modelling several serial stages of processing, each of which finishes with a time that is exponentially distributed (see e.g., [Van Zandt & Ratcliff, 1995](https://link.springer.com/article/10.3758/BF03214411)).
+
+- In GLM and GLME models, fixed factors are treated as linear predictors of a function of the observed response rather than the observed response itself. Because we assume that RT is a direct measure of the time required to name a picture, the function binding the expected values of the DV and the effect of the predictor is the identity link. 
 
 # Summary statistics and plots
 
@@ -513,7 +529,9 @@ ggplot(RT2, aes(x = Cond, y = RT, fill = Cond)) +
 
 # Fit the model
 
-[Barr et al., 2013](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3881361/) have recommended to fit models with a maximal random effect structure, and many researchers do so. However, this often leads to overparametrisation such that resulting models are two complex and uninterpretable. An alternative approach would be to fit a model that **is** supported by the data [Bates et al., 2015](https://arxiv.org/abs/1506.04967).
+[Barr et al., 2013](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3881361/) have recommended to always include the maximal random effects structure in the model, and some researchers follow this recommendation. However, this often leads to overparametrisation, with the resulting models being too complex and uninterpretable due to the inability of the model to provide accurate estimates (mostly because there is simply not enough data).
+
+An alternative approach is, therefore, to fit a model that **is supported by the data** [(Bates et al., 2015)](https://arxiv.org/abs/1506.04967).
 
 ## Option 1 (transformed RTs)
 
