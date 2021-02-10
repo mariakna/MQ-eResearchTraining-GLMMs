@@ -40,7 +40,7 @@ library("broom.mixed")
 
 # Load data
 
-Data that we will be using today is publicly available [here](https://github.com/mariakna/MQ-eResearchTraning--G-LMEmodels).
+Data that we will be using today is available [here](https://github.com/mariakna/MQ-eResearchTraning--G-LMEmodels). 
 
 Download the file *pwiExp.xlsx*, save it in a directory of your choice, make this directory your working directory by using the command `setwd()` and load the file as shown below:
 
@@ -50,18 +50,16 @@ data <- read.xlsx("pwiExp.xlsx", sheet = 1)
 
 ## Data description
 
-This file contains data from a picture-word interference task. In this task, German native speakers named (in German) pictures of familiar concepts (e.g., elephant) with superimposed written word distractors. The distractors were either semantically related (e.g., 'cat') or unrelated (e.g.'hammer') to the depicted concepts. The distractors were (a) German words, (b) novel words that the participants had learned earlier, or (c) unknown pseudowords. 
+This file contains data from a picture-word interference task. In this task, German native speakers named (in German) pictures of familiar concepts (e.g., elephant) with superimposed written word distractors. The distractors were either semantically related (e.g., "cat") or unrelated (e.g., "hammer") to the depicted concepts. The distractors were (a) German words, (b) novel words that the participants had learned earlier in the experiment, or (c) unknown pseudowords. 
 
 <center>
 ![FigName](pwi.png){width=300px}
 </center>
 
-The data we just loaded contains lots of information, but the relevant things for us today are:
+The data we just loaded contains lots of information, but the relevant variables for us today are:
 
-* `Subj`: Participant ID (there were 60 participants in total)
-* `List`: Which list the participant received (1-5)
-* `ItemType`: Experimental or filler (this file only contains experimental items)
-* `Cond`: Condition. This a factor with 5 levels: `SemRelG` (semantically related German), `SemUnRelG` (semantically unrelated German), `SemRelN` (semantically related novel), `SemUnRelN` (semantically unrelated novel), `Baseline` (unknown pseudowords as distractors)
+* `Subj`: Participant ID (N = 60)
+* `Cond`: Condition, a factor with 5 levels: `SemRelG` (semantically related German), `SemUnRelG` (semantically unrelated German), `SemRelN` (semantically related novel), `SemUnRelN` (semantically unrelated novel), `Baseline` (unknown pseudowords as distractors)
 * `TargetAnswer`: correct picture name (in German)
 * `Response`: participant's response
 * `Accuracy`: a factor with 2 levels, `0` = incorrect responses, `1` = correct responses
@@ -74,20 +72,20 @@ div.blue{background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
 
 **Hypotheses 1 & 2:**
 
-* Compared to semantically unrelated German distractors, German distractors from the same semantic category will slow picture naming response times
-* Compared to unknown pseudowords, German semantically unrelated distractors will slow picture naming response times
+1. Compared to unknown pseudowords, German semantically unrelated distractors will slow picture naming response times.
+2. Compared to semantically unrelated German distractors, German distractors from the same semantic category will slow picture naming response times.
 
 </div>
 <p>  </p>
 
-Because our first two hypotheses only concern German and unknown pseudoword distractors, we will restrict the dataset:
+Restrict the dataset to German and unknown pseudoword distractors:
 
 ```{r}
 data2 <- data %>%
   filter(Cond == "SemRelG" | Cond == "SemUnRelG" | Cond == "Baseline")
 ```
 
-Next, adjust factor levels for the independent variable and random terms:
+Adjust factor levels for the independent variable and random terms:
 
 ```{r}
 data2$Cond <- factor(data2$Cond)
@@ -99,7 +97,7 @@ data2$TargetAnswer <- factor(data2$TargetAnswer)
 
 # Inspect data
 
-This step is essential and should not be neglected as it allows you to ensure that your data looks as it should. You can do it in any way you want. I often used the function `xtabs()`, for example:
+This step is essential and should not be skipped as it allows the researcher to ensure that the data looks as it should. You can check your data in any way you want. I often use a function called `xtabs()`:
 
 ```{r}
 head(xtabs(~ Subj + List,data2)) 
@@ -112,15 +110,15 @@ xtabs(~ List + Cond,data2)
 
 ## Remove incorrect responses
 
-We will run our analysis on correct responses only so we first need to check accuracy and exclude observations with incorrect responses.
+Check accuracy and exclude observations with incorrect responses.
 
-Let's look at overall accuracy first:
+Overall accuracy:
 
 ```{r}
 ftable(data2$Accuracy)
 ```
 
-And now accuracy per condition:
+Accuracy per condition:
 
 ```{r}
 (Accuracy <- summarySEwithin(data2, measurevar = "Accuracy", withinvars = "Cond",
@@ -133,7 +131,7 @@ $$
 \sigma_{\overline{x}} = \frac{s}{\sqrt{n}}
 $$
 
-does  not take into  account  that there are multiple  data  points  from  each  participant  and, instead,  summarises  the  variability  across  all  observations  as  if  they  were  independent. Similarly, aggregating the data and calculating averages per participant per condition would conflate variability associated with each participant’s performance and random error with the variability  associated  with  the  experimental  manipulation. One method  to  compute  standard error while also disentangling these two sources of variability was described in [Morey (2008)](http://pcl.missouri.edu/sites/default/files/morey.2008.pdf) and later implemented in the [Rmisc package](http://www.cookbook-r.com/Graphs/Plotting_means_and_error_bars_(ggplot2)/) in R by Ryan Hope. 
+does  not take into  account  that there are multiple  data  points  from  each  participant  and, instead,  summarises  the  variability  across  all  observations  as  if  they  were  independent. Similarly, aggregating the data and calculating averages per participant per condition would conflate variability associated with each participant’s performance and random error with the variability associated with the experimental manipulation. One method  to  compute  standard error while also disentangling these two sources of variability was described in [Morey (2008)](http://pcl.missouri.edu/sites/default/files/morey.2008.pdf) and later implemented in the [Rmisc package](http://www.cookbook-r.com/Graphs/Plotting_means_and_error_bars_(ggplot2)/) by Ryan Hope. 
 
 Luckily, the participants are at ceiling! We can now restrict the data to correct responses:
 
@@ -168,23 +166,23 @@ div.blue{background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
 
 **Hypotheses 1 & 2:**
 
-- Compared to semantically unrelated German distractors, German distractors from the same semantic category will slow picture naming response times
-- Compared to unknown pseudowords, German semantically unrelated distractors will slow picture naming response times
+1. Compared to unknown pseudowords, German semantically unrelated distractors will slow picture naming response times.
+2. Compared to semantically unrelated German distractors, German distractors from the same semantic category will slow picture naming response times.
 
 </div>
 <p>  </p>
 
 How can we test these hypotheses?
 
-1. We could fit two separate models, one testing the first hypothesis (contrast between semantically related and unrelated distractors) and the other testing the second hypothesis (contrast between semantically unrelated and uknown pseudoword distractors)
+1. We could fit two separate models, one testing the first hypothesis (contrast between the semantically unrelated and uknown pseudoword distractors) and the other testing the second hypothesis (contrast between the semantically related and unrelated distractors).
 
 2. We could fit one model testing both hypotheses (and contrasts) simultaneously.
 
-Whatever we choose, we need to code the specified contrasts first. Understanding of contrast coding is essential, and I will now show you why.
+Whatever we choose, we need to code the specified contrasts first. Good understanding of contrast coding is essential, and I will now show you why.
 
 ## Option 1: Treatment vs. sum contrasts for a factor with 2 levels
 
-Imagine we opt for option 1 and restrict our dataset to data points with semantically related and unrelated distractors:
+Imagine we opt for option 1 and restrict our dataset to data points with the semantically related and unrelated distractors to address hypothesis 2:
 
 ```{r}
 dataOpt1 <- dataCorr2 %>%
@@ -198,23 +196,20 @@ levels(dataOpt1$Cond) # Baseline is still included
 dataOpt1$Cond <- factor(dataOpt1$Cond)
 levels(dataOpt1$Cond) # Baseline is no longer there
 ```
-
-
-Now imagine we do not know anything about contrast coding and we simply fit the model without giving it much thought (don't worry about not including random terms at the moment:
+Now imagine that we do not know anything about contrast coding and simply fit the model without giving it much thought (don't worry about not including random terms at the moment):
 
 ```{r}
 model1 <- lm(RT ~ Cond, data = dataOpt1)
 
 round(summary(model1)$coef,3)
 ```
-
-How does R arrive at these particular values for the intercept and slope? We can find this out by inspecting the current contrasts of the factor `Cond` using the `contrasts()` command:
+How does R arrive at these particular values for the intercept and the slope? We can find out by inspecting the current contrasts of the factor `Cond`:
 
 ```{r}
 contrasts(dataOpt1$Cond)
 ```
 
-The default in R, often called **dummy coding**, is to code factors using treatment contrasts, whereby factor levels are ordered alphabetically. That's why level `SemRelG` is coded as 0 and level `SemUnRelG` is coded as 1. 
+What you can see is the default option in R, often called **dummy coding**. Here, the are coded factors using treatment contrasts, whereby factor levels are ordered alphabetically. That's why level `SemRelG` is coded as 0 and level `SemUnRelG` is coded as 1. 
 
 Now, what does that mean for our model?
 
@@ -222,29 +217,34 @@ $$
 RT \sim \beta_0 + \beta_1*Cond 
 $$ 
 
-* Intercept $\beta_0$ is the estimated value (RT) for `SemRelG` 
-* Slope $\beta_1$ is the estimated difference between the means of the two levels (i.e., `SemUnRelG`-`SemRelG`). The sign of the slope is negative because RTs are slower in `SemRelG`
+* Intercept $\beta_0$ is the estimated value (RT) for `SemRelG`. 
+* Slope $\beta_1$ is the estimated difference between the means of the two levels (i.e., `SemUnRelG`-`SemRelG`). The sign of the slope is negative because RTs are slower in `SemRelG`.
 
 $$
 RT_{Related} = 847 - 0*27 = 847\\
 RT_{Unrelated} = 847 - 1*27  = 820
 $$ 
 
-From a theoretical point of view, the intercept in the treatment assesses the average response in the baseline condition (in this case, in the semantically related condition), while the slope tests the difference between condition means. This also means that the intercept expresses a null hypothesis that is of no interest to us: that the mean in condition `SemRelG` is 0:
+From a theoretical point of view, the intercept in the treatment assesses the average response in the baseline condition (in this case, in the semantically related condition), while the slope tests the difference between condition means. This also means that the intercept expresses a null hypothesis that is of no interest to us - that the mean RT in condition `SemRelG` is 0:
 
 $$
-H_0: \beta_0 = 0\\
+H_0: \beta_0 = 0
+$$
+
+and
+
+$$
 H_0: \mu_{Unrelated} - \mu_{Related} = 0
 $$
 
-This contrast coding does not reflect the comparisons we would like to make and so does not correspond to the theoretical knowledge about how cognitive processes work. Therefore, it is better to use  **sum contast coding** instead:
+Obviously, this contrast coding does not reflect the comparisons we would like to make and also does not correspond to the theoretical knowledge about how cognitive processes work. We are better off with  **sum contasts** instead:
 
 ```{r}
-dataOpt1$Condition <- ifelse(dataOpt1$Cond == "SemRelG", -1, 1)
-
-# we can also do:
 contrasts(dataOpt1$Cond) <- c(-1,+1)
 contrasts(dataOpt1$Cond)
+
+# you can also create a separate variable that contains values -1 and 1:
+dataOpt1$Condition <- ifelse(dataOpt1$Cond == "SemRelG", -1, 1)
 ```
 
 Now, `SemRelG` is coded as -1 and `SemUnRelG` is coded as 1. What do the intercept and the slope represent now?
@@ -255,8 +255,8 @@ model2 <- lm(RT ~ Cond, data = dataOpt1)
 round(summary(model2)$coef,3)
 ```
 
-* Intercept $\beta_0$ is now the estimated mean of the two conditions
-* Slope $\beta_1$ is still the estimated difference between the means of the two conditions (i.e., `SemUnRelG`-`SemRelG`)
+* Intercept $\beta_0$ is now the estimated mean of the two conditions.
+* Slope $\beta_1$ is still the estimated difference between the means of the two conditions (i.e., `SemUnRelG`-`SemRelG`).
 
 $$
 RT_{GrandMean} = 834 - 0*14 = 834\\
@@ -267,7 +267,12 @@ $$
 Importantly, while the slope still assesses the difference in condition means, the intercept now tests the null hypothesis that the average of the two conditions is 0:
 
 $$
-H_0: \frac{\mu_{Unrelated} + \mu_{Related}}{2} = 0\\
+H_0: \frac{\mu_{Unrelated} + \mu_{Related}}{2} = 0
+$$
+
+and
+
+$$
 H_0: \mu_{Unrelated} - \mu_{Related} = 0
 $$
 
@@ -286,15 +291,14 @@ div.blue{background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
 
 ## Option 2: Sum contrasts for a factor with 3 levels
 
-Let us now think how we can test the two contrats (related vs. unrelated, and unrelated vs. unknown) in one model.
-
-Basically, we want to code the factor `Cond` in such a way so that, for the first comparison, it contrasts the semantically related condition with the semantically unrelated condition while it disregards the unknown pseudoword condition, and, for the second comparison, it contrasts the unrelated condition with the unknown condition while ignoring the related condition.
+Let us now think how we can test the two contrats (unrelated vs. unknown, and related vs. unrelated) in one model.
 
 Contrast 1:
 
 $$
 H_0: \mu_{Unrelated} - \mu_{Related} = 0
 $$
+
 Contrast 2:
 
 $$
@@ -315,19 +319,19 @@ We can summarise this as follows:
 
 | Cond      | Contrast 1  | Contrast 2  | Intercept |
 |-----------|-------------|-------------|-----------|
-| SemRelG   | 1           | 0           | 1/3       |
+| SemRelG   | 0           | 1           | 1/3       |
 | SemUnRelG | -1          | -1          | 1/3       |
-| Baseline  | 0           | 0           | 1/3       |
+| Baseline  | 1           | 0           | 1/3       |
 
-and store this in a **hypothesis matrix**:
+and store in a **hypothesis matrix**:
 
 ```{r}
 (fractions(t(matrix <- rbind(int = 1/3, 
-                       c1 = c(Baseline = 0, SemRelG = 1, SemUnRelG = -1),
-                       c2 = c(Baseline = 1, SemRelG = 0, SemUnRelG = -1)))))
+                       c1 = c(Baseline = 1, SemRelG = 0, SemUnRelG = -1),
+                       c2 = c(Baseline = 0, SemRelG = 1, SemUnRelG = -1)))))
 ```
 
-To obtain a contrast matrix necessary to test these hypotheses in a linear model, this matrix has to be inverted (see [Friendly, Fox & Chalmers, 2018](https://cran.r-project.org/web/packages/matlib/vignettes/ginv.html) and [Schad et al., 2019](https://arxiv.org/abs/1807.10451) for more detail):
+To obtain a contrast matrix necessary to test these hypotheses in a linear model, the hypothesis matrix has to be inverted (see [Friendly, Fox & Chalmers, 2018](https://cran.r-project.org/web/packages/matlib/vignettes/ginv.html) and [Schad et al., 2019](https://arxiv.org/abs/1807.10451) for more detail):
 
 ```{r}
 # function that formats the output of ginv():
@@ -336,25 +340,24 @@ ginv2 <- function(x)
 
 # Invert matrix:
 (matrix2 <- ginv2(matrix))
-# Assign matrix to variable Cond:
+# Assign matrix to the variable Cond:
 (contrasts(dataCorr2$Cond) <- matrix2[, 2:3])
 ```
-
 In the next step, we add two new columns to the original dataset to be able to convert from a factor-based random-effects structure to a vector-valued one:
 
 ```{r}
 m0 <- lmer(RT ~ Cond + (1 + Cond||Subj) + (1 + Cond||TargetAnswer), data = dataCorr2)
 
 mat <- model.matrix(m0)
-dataCorr2$SemRel.SemUnRel <- mat[, 2]
-dataCorr2$Bas.SemUnRel <- mat[, 3]
+dataCorr2$Bas.SemUnRel <- mat[, 2]
+dataCorr2$SemRel.SemUnRel <- mat[, 3]
 
 dataCorr2[1:5,18:ncol(dataCorr2)]
 ```
 
 # Transform or not transform?
 
-The core assumptions of the linear mixed effects models is that the residuals and random effect coefficients are independent and identically distributed. Ideally, the residuals should be normally distributed, and, if this assumption is violated, the model is simply inadequate.
+The core assumption of the linear mixed effects models is that the residuals and random effect coefficients are independent and identically distributed. Ideally, the residuals should be normally distributed, and, if this assumption is violated, the model is simply inadequate.
 
 ```{r}
 m1 <- lm(RT ~ Cond, data = dataCorr2)
@@ -362,20 +365,20 @@ hist(residuals(m1))
 qqPlot(residuals(m1))
 ```
 
-A quantile-quntile (QQ) plot is a scatterplot, in which two sets of quantiles are plotted against each other. If both sets of quantiles came from the same distribution, the points should form a straight line. By default, `qqplot()` produces a normal QQ plot and so allows us to check whether the model residuals are normally distributed (you can also use `qqnorm()`).
+A **quantile-quntile (QQ) plot** is a scatterplot, in which two sets of quantiles are plotted against each other. If both sets of quantiles came from the same distribution, the points should form a straight line. By default, `qqplot()` produces a normal QQ plot and so allows us to check whether the model residuals are normally distributed (you can also use `qqnorm()`).
 
 It would seem that the model residuals have more extreme values than would be expected if they were normally distributed.
 
 How can we deal with that? There are 2 (main) options:
 
-1. transfrom the data such that it satisfies the model assumptions
-2. use generalised linear mixed effects models with a different (not normal) distribution
+1. Transfrom the data such that it satisfies the model assumptions.
+2. Use the generalised linear mixed effects model with a different (not normal) distribution.
 
 There is an active debate about which approach is best. 
 
 The most important reasons for transforming the raw data have to do with some of the core properties of raw RTs (see e.g., [Schramm & Rouder, 2019](https://psyarxiv.com/9ksa6/) for more detail):
 
-1. RTs aee unimodal with a skewed upper tail.
+1. RTs are unimodal with a skewed upper tail.
 2. Manipulations that slow RTs tend to increase both the mean and SD with relatively small effects in the skewed tail. While such distributions as gamma, inverse Gaussian, ex-Gaussian, ex-Wald, lognormal, Weibull and Gumble can accomodate this feature, the normal distribution cannot.
 3. Effects across conditions may be hard to detect because there is a lot of trial-by-trial variability as well as variability across participants.
 
@@ -383,9 +386,9 @@ Due to these properties, many statisticians believe that transformations may hel
 
 However, another property of RTs is that all RT distributions have a substantial shift away from zero. If such distributions are transformed, the shape and the scale of the resulting transformed distribution might be radically different from the orginal distribution of raw RTs. Furthermore, because the degree of variance is a function of the shift, transformations may work for some paradigms but not for others.
 
-[Lo & Andrews, 2015](https://www.frontiersin.org/articles/10.3389/fpsyg.2015.01171/full) have argued that the best approach would be to analyse raw RTs with generalised linear mixed effects model. [Schramm & Rouder, 2019](https://psyarxiv.com/9ksa6/) used data simulations to show that lognormal transformations do not offer any advantages as compared to raw data, while reciprocal transformations might even decrease the statistical power (albeit by a small margin). Some researchers argue that the best practice would be to conduct both types of analyses (on raw and transformed data) and only consider the effects significant if both models produced a significant outcome(e.g., [Brysbaert & Stevens, 2018](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6646942/)). Importantly, however, the distributions can be seen as generating processes and thus have cognitive interpretations [(e.g., De Boeck & Jeon, 2019)](https://www.frontiersin.org/articles/10.3389/fpsyg.2019.00102/full), which means that choosing an appropriate distribution can be tricky.
+[Lo & Andrews, 2015](https://www.frontiersin.org/articles/10.3389/fpsyg.2015.01171/full) have argued that the best approach would be to analyse raw RTs with the generalised linear mixed effects model. [Schramm & Rouder, 2019](https://psyarxiv.com/9ksa6/) used data simulations to show that lognormal transformations do not offer any advantages as compared to raw data, while reciprocal transformations might even decrease the statistical power (albeit by a small margin). Other researchers argue that the best practice would be to conduct both types of analyses (on raw and transformed data) and only consider the effects significant if both models produced a significant outcome (e.g., [Brysbaert & Stevens, 2018](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6646942/)). Importantly, because the distributions can be interpreted as data generating processes, the choice of a distribution often has cognitive interpretations [(e.g., De Boeck & Jeon, 2019)](https://www.frontiersin.org/articles/10.3389/fpsyg.2019.00102/full), and should be done very carefully.
 
-It is beyond the scope of today's webinar to discuss this in depth so, in the following sections, I will give you examples on how to fit linear mixed effects models on both transformed and raw data. 
+It is beyond the scope of today's webinar to discuss this in depth so, in the following sections, I will give you examples on how to fit models on both transformed and raw data. 
 
 ## How to transform?
 
@@ -513,7 +516,7 @@ ggplot(RT2, aes(x = Cond, y = RT, fill = Cond)) +
 
 # Fit the model
 
-There are two main approaches to model building:
+There are two main approaches to model building (e.g., [Schad et al., 2019](https://arxiv.org/abs/1904.12765)):
 
 1. Start with a *minimal* model that captures the phenomenon of interest but not much other structure in the data (e.g., a linear model with just the factor of main interest). Next, perform a number of checks (such as, but not limited to, if the model assumptions are met and whether the model fit is good) and, if the model passes all of them, additional structures can be added. If the model turns out to be inadequate, improve the model or start a new cycle of model development.
 
@@ -521,7 +524,7 @@ $$
 RT \sim \beta_0 + \beta_1*Cond
 $$
 
-2. Start with a *maximal* model, i.e., a model that contains all effects from the experimental manipulations (main effects and interactions) and all within-subject and within-item variance components. Note that the maximal model is maximal within the scope of a linear regression; however, it is not maximal with respect to the data-generating process (i.e., it doesn't capture things like selection bias, changes across time, etc.).  
+2. Start with a *maximal* model, i.e., a model that contains all effects from the experimental manipulations (main effects and interactions) and all within-subject and within-item variance components. Note that the maximal model is maximal within the scope of a linear regression; however, it is not maximal with respect to the data generating process (i.e., it doesn't capture things like selection bias, changes across time, etc.).  
 
 <style>
 div.blue{background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
@@ -533,10 +536,12 @@ What is a maximal model?
 * *Intercept*
 * *Fixed effects*
 * *Random effects for subjects:*
+
   + the by-subjects adjustment to the grand mean 
   + the by-subjects adjustment to the mean slope
  
 * *Random effects for items:*
+
   + the by-subjects adjustment to the grand mean 
   + the by-subjects adjustment to the mean slope
   
@@ -616,9 +621,9 @@ $\rho$ is the correlation parameter.
   
 Imagine you choose option 2. What do you do if the model fails? 
 
-In fact, after [Barr et al., 2013](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3881361/) had recommended to only fit models with the maximal random effects structure, many researchers have been having trouble getting the models to converge. The main problem with maximal models though is not convergence errors but overparametrisation, a situation, when the model is so complex that it is unable to provide accurate estimates (e.g., because there is simply not enough data) and is uninterpretable.
+In fact, after [Barr et al., 2013](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3881361/) had recommended to only fit models with the maximal random effects structure, many researchers have been having trouble getting their models to converge. The main problem with maximal models though is overparametrisation, a situation, when the model is so complex that it is unable to provide accurate estimates (e.g., because there is simply not enough data) and is uninterpretable.
 
-An alternative approach is, therefore, to fit a model that is **supported by the data** [(Bates et al., 2015)](https://arxiv.org/abs/1506.04967). This means developing a model, in which all variance components and correlation parameters are supported by the data. 
+An alternative approach is, therefore, to build a model that is **supported by the data** [(Bates et al., 2015)](https://arxiv.org/abs/1506.04967). This means developing a model, in which all variance components and correlation parameters are supported by the data. 
 
 ## Option 1 (transformed RTs)
 
@@ -636,7 +641,6 @@ Check the structure of the model:
 summary(rePCA(maxmod))
 VarCorr(maxmod)
 ```
-
 There is one component - the adjustment to the slope for `Bas.SemUnRel` - that does not explain any variance; it should be removed.
 
 Note that, at this stage, we do not even need to check whether the model converged or not. And we certainly do not need to check the p-values.
@@ -670,14 +674,13 @@ Now we can finally take a look at the results.
 ```{r}
 print(summary(mod2, corr = F))
 ```
+Two things to note here:
 
-Two things to note before we talk about the results:
-
-1. This model was fit using **REML (Restricted Maximum Likelihood Estimation)**, which is a way to estimate variance components. REML works by first getting regression residuals for the observations modeled by the fixed effects portion of the model. At this point, it ignores any variance components and estimates the statistical model for these residuals. Next, it uses **MLE (maximum likelihood estimation)** on the residuals to get estimates of the variance components. The main advantage of this approach is that the MLE adjusts the variance estimates for the fact that we are working with regression residuals ([here](http://users.stat.umn.edu/~gary/classes/5303/handouts/REML.pdf) is a super short paper/handout on this for those who want to know more). It's generally good to use REML, if it is available, when you are interested in the magnitude of the random effects variances, but never when you are comparing models with different fixed effects via hypothesis tests or information-theoretic criteria such as AIC.
+1. This model was fit using **REML (Restricted Maximum Likelihood Estimation)**, which is a way to estimate variance components. REML works by first getting regression residuals for the observations modeled by the fixed effects portion of the model. At this point, it ignores any variance components and estimates the statistical model for these residuals. Next, it uses **MLE (maximum likelihood estimation)** on the residuals to get estimates of the variance components. The main advantage of this approach is that the MLE adjusts the variance estimates for the fact that we are working with regression residuals ([here](http://users.stat.umn.edu/~gary/classes/5303/handouts/REML.pdf) is a super short paper/handout on this). Ben Bolker says that it's generally good to use REML, if it is available, when you are interested in the magnitude of the random effects variances, but never when you are comparing models with different fixed effects via hypothesis tests or information-theoretic criteria such as AIC.
 
 2. Optimisers: If you have tons of data, modelling with `lme4` can take time. This is partly due to `lme4` performing thousands of convergence checks. The choice of an optimiser can change the results of the model so it is recommended to fit models with different optimisers and then compare the outcomes. [Here](http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/) is a useful and short blog post about it. Importantly, make sure you understand how optimsers work and how they differ from each other before you use them.
 
-Alright... It would seem that we cannot reject the null for the second contrast (semantically unrelated vs. unknown) but that we can for the first contrast (semantically related vs. unrelated).
+Alright... It would seem that we cannot reject the null for the first contrast (semantically unrelated vs. unknown) but that we can for the second contrast (semantically related vs. unrelated).
 
 **Confidence intervals**
 
@@ -690,7 +693,8 @@ Alright... It would seem that we cannot reject the null for the second contrast 
 **Table of effects**
 
 ```{r}
-labels <- c("Contrast 1: German sem. unrelated vs. untrained pseudoword distractors", "Contrast 2: German sem. related vs. unrelated distractors")
+labels <- c("Contrast 1: German sem. unrelated vs. untrained pseudoword distractors", 
+            "Contrast 2: German sem. related vs. unrelated distractors")
 
 keep.terms <- names(fixef(mod2)[-1])
 
@@ -705,7 +709,7 @@ tab_model(mod2,
           emph.p = FALSE, dv.labels = "Dependent Variable", show.icc = FALSE)
 ```
 
-Note that marginal $R^2$ shows the variance explained only by the fixed effects, while conditional $R^2$ provides the variance explained by the entire model (including the random effects).
+Note that the marginal $R^2$ shows the variance explained only by the fixed effects, while the conditional $R^2$ provides the variance explained by the entire model (including the random effects).
 
 **Plot of effects**
 
@@ -718,16 +722,17 @@ plot_model(mod2, title = "", terms = keep.terms, axis.labels = rev(labels),
            width = 0.1) + theme_sjplot2() +
            scale_color_sjplot(palette = "circus")
 ```
+
 You can also extract AIC, BIC and log-likelihood from the model:
 
 ```{r}
 glance(mod2)
 ```
-Check out `tidy()` and `augment()` functions from the package `broom.mixed` for further options.
+Check out `tidy()` and `augment()` functions from the package `broom.mixed` for further options. If you need a Latex table with model output, the `stargazer()` function from the `stargazer` package will generate it for you.
 
 ## Option 2 (raw RTs)
 
-We will fit a generalised linear mixed effects model with a gamma distribution and identitylink.
+We will fit a generalised linear mixed effects model with a gamma distribution and identity link.
 
 The choice of the gamma distribution is mainly motivated by considerations outlined in [Lo & Andrews (2015)](https://www.frontiersin.org/articles/10.3389/fpsyg.2015.01171/full). To summarise briefly:
 
