@@ -728,9 +728,14 @@ You can also extract AIC, BIC and log-likelihood from the model:
 ```{r}
 glance(mod2)
 ```
+<<<<<<< HEAD
 Check out `tidy()` and `augment()` functions from the package `broom.mixed` for further options. If you need a Latex table with model output, the `stargazer()` function from the `stargazer` package will generate it for you.
+=======
 
-## Option 2 (raw RTs)
+Check out `tidy()` and `augment()` functions from the package `broom.mixed` for further options.
+>>>>>>> a6d9a3ddecf1d4ff3ab161e5a32171a192feeace
+
+## Option 2 (raw RTs): sneak peek 
 
 We will fit a generalised linear mixed effects model with a gamma distribution and identity link.
 
@@ -743,7 +748,8 @@ The choice of the gamma distribution is mainly motivated by considerations outli
 ```{r}
 maxmod_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
                 (1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) + 
-                (1 + Bas.SemUnRel + SemRel.SemUnRel|TargetAnswer), dataCorr3, family = Gamma(link = "identity"))
+                (1 + Bas.SemUnRel + SemRel.SemUnRel|TargetAnswer), dataCorr3, 
+                family = Gamma(link = "identity"))
 
 summary(rePCA(maxmod_raw))
 VarCorr(maxmod_raw)
@@ -754,9 +760,52 @@ Simplify:
 ```{r}
 mod2_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
                 (1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) + 
-                (1 + SemRel.SemUnRel|TargetAnswer), dataCorr3, family = Gamma(link = "identity"))
+                (1 + SemRel.SemUnRel|TargetAnswer), dataCorr3, 
+                family = Gamma(link = "identity"))
 
 summary(rePCA(mod2_raw))
 VarCorr(mod2_raw)
 ```
 
+Simplify even further:
+
+```{r}
+mod3_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+                (1 + Bas.SemUnRel + SemRel.SemUnRel||Subj) + 
+                (1 + SemRel.SemUnRel||TargetAnswer), dataCorr3, 
+                family = Gamma(link = "identity"))
+
+summary(rePCA(mod3_raw))
+VarCorr(mod3_raw)
+```
+
+And... continue:
+
+```{r}
+mod4_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+                (1 + SemRel.SemUnRel||Subj) + 
+                (1 + SemRel.SemUnRel||TargetAnswer), dataCorr3, 
+                family = Gamma(link = "identity"))
+
+summary(rePCA(mod4_raw))
+VarCorr(mod4_raw)
+```
+
+Use all optimisers and compare the results:
+
+```{r}
+modelfit.all <- lme4::allFit(mod4_raw)
+ss <- summary(modelfit.all)
+```
+
+```{r}
+mod5_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+                (1 + SemRel.SemUnRel||Subj) + 
+                (1 + SemRel.SemUnRel||TargetAnswer), dataCorr3, 
+                family = Gamma(link = "identity"),
+                control = glmerControl(optimizer = 'bobyqa', optCtrl = list(maxfun = 2e5)))
+
+print(summary(mod5_raw, corr = F))
+```
+
+# cite https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#model-specification
