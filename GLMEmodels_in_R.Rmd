@@ -34,6 +34,7 @@ library("sjmisc")
 library("sjPlot")
 library("ggsignif")
 library("RColorBrewer")
+library("rms")
 ```
 
 # Load data
@@ -385,7 +386,7 @@ However, another property of RTs is that all RT distributions have a substantial
 
 It is beyond the scope of today's webinar to discuss this in depth so, in the following sections, I will give you examples on how to fit linear mixed effects models on both transformed and raw data. 
 
-## Option 1: Transform
+## How to transform?
 
 ```{r}
 boxcox(m1)
@@ -405,16 +406,6 @@ mInv <- lm(transRT ~ Cond, data = dataCorr3)
 hist(residuals(mInv))
 qqPlot(residuals(mInv))
 ```
-
-## Option 2: Do not transform TO BE CHANGED LATER
-
-In that case, we will fit a generalised linear mixed effects model with a gamma distribution and identity link.
-
-The choice of the gamma distribution is mainly motivated by considerations outlined in [Lo & Andrews (2015)](https://www.frontiersin.org/articles/10.3389/fpsyg.2015.01171/full). To summarise briefly:
-
-* The Gamma distribution is the sum of multiple exponential distributions. Basically, it models the probability that no event occurs until a certain period of time. Therefore, it could be conceptualised as modelling several serial stages of processing, each of which finishes with a time that is exponentially distributed (see e.g., [Van Zandt & Ratcliff, 1995](https://link.springer.com/article/10.3758/BF03214411)).
-
-* In GLM and GLME models, fixed factors are treated as linear predictors of a function of the observed response rather than the observed response itself. Because we assume that RT is a direct measure of the time required to name a picture, the function binding the expected values of the DV and the effect of the predictor is the identity link. 
 
 # Summary statistics and plots
 
@@ -673,13 +664,86 @@ plot(fitted(mod2), resid(mod2))
 
 They do, and there isn't any evidence of heteroscedasticity in the residuals against fitted values plot.
 
-We now check to what extent the model is overfitting this specific dataset. To achieve this, we use bootsrap by randomly drawing observations from the data (with replacement). 
+Now we can finally take a look at the results.
 
 ```{r}
-length(unique(sample(1:4028, replace = T)))
+print(summary(mod2, corr = F))
 ```
 
-Next, we fit a model to the data in the sample and use this model to predict the RTs in the original dataset (which contains data points on which the bootsrap sample hasn't been trained). Finally, we compare the goodness of fit of the two models. Averaged over the bootstrap samples, these comparisons can help us understand to what extent the original model overfits the data.
+Two things to note before we talk about the results:
 
+1. This model was fit using **REML (Restricted Maximum Likelihood Estimation)**, which is a way to estimate variance components. REML works by first getting regression residuals for the observations modeled by the fixed effects portion of the model. At this point, it ignores any variance components and estimates the statistical model for these residuals. Next, it uses **MLE (maximum likelihood estimation)** on the residuals to get estimates of the variance components. The main advantage of this approach is that the MLE adjusts the variance estimates for the fact that we are working with regression residuals ([here](http://users.stat.umn.edu/~gary/classes/5303/handouts/REML.pdf) is a super short paper/handout on this for those who want to know more). It's generally good to use REML, if it is available, when you are interested in the magnitude of the random effects variances, but never when you are comparing models with different fixed effects via hypothesis tests or information-theoretic criteria such as AIC.
 
+2. Optimisers: If you have tons of data, modelling with `lme4` can take time. This is partly due to `lme4` performing thousands of convergence checks. The choice of an optimiser can change the results of the model so it is recommended to fit models with different optimisers and then compare the outcomes. [Here](http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/) is a useful and short blog post about it. Importantly, make sure you understand how optimsers work and how they differ from each other before you use them.
 
+Alright... It would seem that we cannot reject the null for the second contrast (semantically unrelated vs. unknown) but that we can for the first contrast (semantically related vs. unrelated).
+
+**Confidence intervals**
+
+```{r}
+# this will take some time!!
+ConfidInt <- confint(mod2, parm = c("(Intercept)", "Bas.SemUnRel", "SemRel.SemUnRel"), method = "boot")
+round(ConfidInt, 3)
+```
+
+**Table of effects**
+
+```{r}
+labels <- c("Contrast 1: German sem. unrelated vs. untrained pseudoword distractors", "Contrast 2: German sem. related vs. unrelated distractors")
+
+keep.terms <- names(fixef(mod2)[-1])
+
+tab_model(mod2, 
+          terms = keep.terms, 
+          auto.label = FALSE, 
+          pred.labels = labels, 
+          show.se = TRUE, show.stat = TRUE, 
+          show.ci = FALSE, string.se = "SE", 
+          show.re.var = FALSE, 
+          show.obs = FALSE, show.ngroups = FALSE,
+          emph.p = FALSE, dv.labels = "Dependent Variable", show.icc = FALSE)
+```
+
+Note that marginal $R^2$ shows the variance explained only by the fixed effects, while conditional $R^2$ provides the variance explained by the entire model (including the random effects).
+
+**Plot of effects**
+
+```{r}
+plot_model(mod2, title = "", terms = keep.terms, axis.labels = rev(labels), 
+           type = "est", sort.est = NULL, colors = "bw", 
+           show.values = TRUE, show.p = TRUE, value.offset = 0.4, 
+           value.size = 4, dot.size = 2, line.size = 1, 
+           vline.color = "black", 
+           width = 0.1) + theme_sjplot2() +
+           scale_color_sjplot(palette = "circus")
+```
+
+## Option 2 (raw RTs)
+
+We will fit a generalised linear mixed effects model with a gamma distribution and identitylink.
+
+The choice of the gamma distribution is mainly motivated by considerations outlined in [Lo & Andrews (2015)](https://www.frontiersin.org/articles/10.3389/fpsyg.2015.01171/full). To summarise briefly:
+
+* The Gamma distribution is the sum of multiple exponential distributions. Basically, it models the probability that no event occurs until a certain period of time. Therefore, it could be conceptualised as modelling several serial stages of processing, each of which finishes with a time that is exponentially distributed (see e.g., [Van Zandt & Ratcliff, 1995](https://link.springer.com/article/10.3758/BF03214411)).
+
+* In GLM and GLME models, fixed factors are treated as linear predictors of a function of the observed response rather than the observed response itself. Because we assume that RT is a direct measure of the time required to name a picture, the function binding the expected values of the DV and the effect of the predictor is the identity link.
+
+```{r}
+maxmod_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+                (1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) + 
+                (1 + Bas.SemUnRel + SemRel.SemUnRel|TargetAnswer), dataCorr3, family = Gamma(link = "identity"))
+
+summary(rePCA(maxmod_raw))
+VarCorr(maxmod_raw)
+```
+
+Simplify:
+
+```{r}
+mod2_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+                (1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) + 
+                (1 + SemRel.SemUnRel|TargetAnswer), dataCorr3, family = Gamma(link = "identity"))
+
+summary(rePCA(mod2_raw))
+VarCorr(mod2_raw)
+```
