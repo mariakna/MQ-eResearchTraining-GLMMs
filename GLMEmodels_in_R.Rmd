@@ -343,6 +343,7 @@ ginv2 <- function(x)
 # Assign matrix to the variable Cond:
 (contrasts(dataCorr2$Cond) <- matrix2[, 2:3])
 ```
+
 In the next step, we add two new columns to the original dataset to be able to convert from a factor-based random-effects structure to a vector-valued one:
 
 ```{r}
@@ -674,6 +675,7 @@ Now we can finally take a look at the results.
 ```{r}
 print(summary(mod2, corr = F))
 ```
+
 Two things to note here:
 
 1. This model was fit using **REML (Restricted Maximum Likelihood Estimation)**, which is a way to estimate variance components. REML works by first getting regression residuals for the observations modeled by the fixed effects portion of the model. At this point, it ignores any variance components and estimates the statistical model for these residuals. Next, it uses **MLE (maximum likelihood estimation)** on the residuals to get estimates of the variance components. The main advantage of this approach is that the MLE adjusts the variance estimates for the fact that we are working with regression residuals ([here](http://users.stat.umn.edu/~gary/classes/5303/handouts/REML.pdf) is a super short paper/handout on this). Ben Bolker says that it's generally good to use REML, if it is available, when you are interested in the magnitude of the random effects variances, but never when you are comparing models with different fixed effects via hypothesis tests or information-theoretic criteria such as AIC.
@@ -728,12 +730,8 @@ You can also extract AIC, BIC and log-likelihood from the model:
 ```{r}
 glance(mod2)
 ```
-<<<<<<< HEAD
-Check out `tidy()` and `augment()` functions from the package `broom.mixed` for further options. If you need a Latex table with model output, the `stargazer()` function from the `stargazer` package will generate it for you.
-=======
 
-Check out `tidy()` and `augment()` functions from the package `broom.mixed` for further options.
->>>>>>> a6d9a3ddecf1d4ff3ab161e5a32171a192feeace
+Check out `tidy()` and `augment()` functions from the package `broom.mixed` for further options. If you need a Latex table with model output, the `stargazer()` function from the `stargazer` package will generate it for you.
 
 ## Option 2 (raw RTs): sneak peek 
 
@@ -767,45 +765,54 @@ summary(rePCA(mod2_raw))
 VarCorr(mod2_raw)
 ```
 
-Simplify even further:
+The model looks alright, but did it converge?
+
+```{r}
+print(summary(mod2_raw, corr = F))
+```
+
+No surprise here. `glmer()` fits often produce convergence errors; however, they are very often false positives (type `?convergence` in the console to learn more). There are many things we can do to fix this.
+
+We start by adjusting the convergence tolerance with the `optctrl` argument to `glmerControl`. My preferred optimiser is the bound optimization by quadratic approximation (Bobyqa) with a set of 200000 iterations (it is recommended to use at least 100000).
 
 ```{r}
 mod3_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
-                (1 + Bas.SemUnRel + SemRel.SemUnRel||Subj) + 
-                (1 + SemRel.SemUnRel||TargetAnswer), dataCorr3, 
-                family = Gamma(link = "identity"))
-
-summary(rePCA(mod3_raw))
-VarCorr(mod3_raw)
-```
-
-And... continue:
-
-```{r}
-mod4_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
-                (1 + SemRel.SemUnRel||Subj) + 
-                (1 + SemRel.SemUnRel||TargetAnswer), dataCorr3, 
-                family = Gamma(link = "identity"))
-
-summary(rePCA(mod4_raw))
-VarCorr(mod4_raw)
-```
-
-Use all optimisers and compare the results:
-
-```{r}
-modelfit.all <- lme4::allFit(mod4_raw)
-ss <- summary(modelfit.all)
-```
-
-```{r}
-mod5_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
-                (1 + SemRel.SemUnRel||Subj) + 
-                (1 + SemRel.SemUnRel||TargetAnswer), dataCorr3, 
+                (1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) + 
+                (1 + SemRel.SemUnRel|TargetAnswer), dataCorr3, 
                 family = Gamma(link = "identity"),
-                control = glmerControl(optimizer = 'bobyqa', optCtrl = list(maxfun = 2e5)))
+                control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
 
-print(summary(mod5_raw, corr = F))
+print(summary(mod3_raw, corr = F))
 ```
 
-# cite https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#model-specification
+Looks good! The problem is kind of solved (see [here](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#reml-for-glmms) and/or type `?convergence` in the console to find more tips). But we still need to make sure that the model would perform similarly with other optimisers.
+
+```{r}
+fit_all <- lme4::allFit(mod2_raw, maxfun = 2e5)
+ss <- summary(fit_all)
+```
+
+We can so check which optimisers worked and which not:
+
+```{r}
+ss$which.OK
+```
+
+And we can inspect warnings that these models produced:
+
+```{r}
+is.OK <- sapply(fit_all, is, "merMod")
+fit_all.OK <- fit_all[is.OK]
+lapply(fit_all.OK,function(x) x@optinfo$conv$lme4$messages)
+```
+We can also extract the estimates of the fixed effects and compare them:
+
+```{r}
+ss$fixef
+```
+
+Most importantly, we need to inspect the log-likelihoods for all models. If they are close to each other, we can conclude that the optimiser does not influence the parameter estimates.
+
+```{r}
+ss$llik
+```
