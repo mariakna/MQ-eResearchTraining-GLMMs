@@ -35,6 +35,7 @@ library("sjPlot")
 library("ggsignif")
 library("RColorBrewer")
 library("rms")
+library("broom.mixed")
 ```
 
 # Load data
@@ -682,8 +683,8 @@ Alright... It would seem that we cannot reject the null for the second contrast 
 
 ```{r}
 # this will take some time!!
-ConfidInt <- confint(mod2, parm = c("(Intercept)", "Bas.SemUnRel", "SemRel.SemUnRel"), method = "boot")
-round(ConfidInt, 3)
+#ConfidInt <- confint(mod2, parm = c("(Intercept)", "Bas.SemUnRel", "SemRel.SemUnRel"), method = "boot")
+#round(ConfidInt, 3)
 ```
 
 **Table of effects**
@@ -717,6 +718,12 @@ plot_model(mod2, title = "", terms = keep.terms, axis.labels = rev(labels),
            width = 0.1) + theme_sjplot2() +
            scale_color_sjplot(palette = "circus")
 ```
+You can also extract AIC, BIC and log-likelihood from the model:
+
+```{r}
+glance(mod2)
+```
+Check out `tidy()` and `augment()` functions from the package `broom.mixed` for further options.
 
 ## Option 2 (raw RTs)
 
