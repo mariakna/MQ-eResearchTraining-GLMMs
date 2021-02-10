@@ -747,3 +747,4 @@ mod2_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
 summary(rePCA(mod2_raw))
 VarCorr(mod2_raw)
 ```
+
