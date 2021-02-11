@@ -757,9 +757,9 @@ Thereby, the link function and the variance depend on the distribution of $Y_{i}
 In a GLMM, the linear predictor is a combination of the fixed and random effects excluding the residuals:
 
 $$
-\eta = X\beta + Zu
+\eta_{ij} = x^{'}_{ij} \beta + Z^{'}_{ij}u_{j}
 $$
-where $Z$ is the random complement to the fixed $X$ and $u$ is the the random complement to the fixed $\beta$.
+where $Z^{'}_{ij}$ is the random complement to $x^{'}_{ij}$ (or, the random effects design matrix) and $u_{j}$ is the the random complement to the fixed $\beta$ (or, the random effect).
 
 As a starting point, we will fit a GLMM with a gamma distribution and the identity link (just a starting point, not necessarily the best option).
 
