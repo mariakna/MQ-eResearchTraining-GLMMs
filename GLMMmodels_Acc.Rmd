@@ -71,8 +71,6 @@ Adjust factor levels for the independent variable and random terms:
 
 ```{r}
 data2$LC <- factor(data2$LC)
-levels(data2$LC)
-
 data2$Subj <- factor(data2$Subj)
 data2$NovelName <- factor(data2$NovelName)
 ```
