@@ -1,5 +1,5 @@
 ---
-title: "Analysing RT data with (generalised) linear mixed effects models in R"
+title: "Analysing RT data with (generalised) linear mixed effects models"
 author: "Maria Korochkina"
 date: "Last update: `r format(Sys.time(), '%d %B, %Y')`"
 output:
