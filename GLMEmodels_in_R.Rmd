@@ -900,4 +900,6 @@ anova(mod3_raw, mod3b_raw)
 
 No wonder given the value of the conditional $R^2$... The next step should probably be trying out the inverse link.
 
+# Accuracy
+
  for accuracy https://stats.idre.ucla.edu/other/mult-pkg/introduction-to-generalized-linear-mixed-models/
