@@ -1,0 +1,57 @@
+---
+title: "Analysing accuracy data with GLMM models: Sneak peek"
+author: "Maria Korochkina"
+date: "Last update: `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+    theme: cerulean
+fontsize: 16pt
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+# Load required packages
+
+```{r, results = "hide"}
+rm(list=ls())
+
+library("openxlsx")
+library("Rmisc")
+library("tidyverse")
+library("lme4")
+library("car")
+library("MASS")
+library("scales")
+library("lmerTest")
+library("sjmisc")
+library("sjPlot")
+library("ggsignif")
+library("RColorBrewer")
+library("rms")
+library("broom.mixed")
+```
+
+# Load data
+
+Data that we will be using today is available [here](https://github.com/mariakna/MQ-eResearchTraning--G-LMEmodels). 
+
+Download the file *nwl.xlsx*, save it in a directory of your choice, make this directory your working directory by using the command `setwd()` and load the file as shown below:
+
+```{r}
+data <- read.xlsx("nwl.xlsx", sheet = 1)
+```
+
+## Data description
+
+This file contains data from a word learning task. German native speakers learned new names for familiar concepts (e.g., *Marp* for cat), simulating word learning in a foreign language. As part of the learning procedure, they were asked to name the pictures of the familiar concepts (e.g., cat) using the novel names (e.g., *Marp*). The words were taught in two conditions, categorically related (*CRel*) and unrelated (*UnRel*). We wish to know whether, across the first 8 naming attempts, the participants were more accurate in the unrelated condition.
+
+
+
+named (in German) pictures of familiar concepts (e.g., elephant) with superimposed written word distractors. The distractors were either semantically related (e.g., "cat") or unrelated (e.g., "hammer") to the depicted concepts. The distractors were (a) German words, (b) novel words that the participants had learned earlier in the experiment, or (c) unknown pseudowords. 

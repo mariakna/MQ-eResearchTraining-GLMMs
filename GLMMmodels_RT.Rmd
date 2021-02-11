@@ -17,6 +17,9 @@ fontsize: 16pt
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
+> All models are wrong, but some are useful.
+> `r tufte::quote_footer('Box (1979), p. 202')`
+
 # Load required packages
 
 ```{r, results = "hide"}
