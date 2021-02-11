@@ -1529,7 +1529,7 @@ div.tocify {
 <blockquote>
 All models are wrong, but some are useful.
 <footer>
-— Box (1979), p. 202
+Box (1979), p. 202
 </footer>
 </blockquote>
 <div id="load-required-packages" class="section level1">
@@ -2314,9 +2314,9 @@ lapply(fit_all.OK,function(x) x@optinfo$conv$lme4$messages)</code></pre>
 <pre class="r"><code>ConfidInt &lt;- confint(mod3, parm = c(&quot;(Intercept)&quot;, &quot;Bas.SemUnRel&quot;, &quot;SemRel.SemUnRel&quot;), method = &quot;boot&quot;)
 round(ConfidInt, 3)</code></pre>
 <pre><code>##                   2.5 %  97.5 %
-## (Intercept)     -13.097 -12.264
-## Bas.SemUnRel     -0.198   0.370
-## SemRel.SemUnRel   0.054   0.734</code></pre>
+## (Intercept)     -13.211 -12.257
+## Bas.SemUnRel     -0.214   0.378
+## SemRel.SemUnRel   0.090   0.718</code></pre>
 <p><strong>Plot of effects</strong></p>
 <pre class="r"><code>labels &lt;- c(&quot;Contrast 1: German sem. unrelated vs. untrained pseudoword distractors&quot;, 
             &quot;Contrast 2: German sem. related vs. unrelated distractors&quot;)

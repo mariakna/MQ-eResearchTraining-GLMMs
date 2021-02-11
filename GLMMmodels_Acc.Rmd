@@ -50,8 +50,29 @@ data <- read.xlsx("nwl.xlsx", sheet = 1)
 
 ## Data description
 
-This file contains data from a word learning task. German native speakers learned new names for familiar concepts (e.g., *Marp* for cat), simulating word learning in a foreign language. As part of the learning procedure, they were asked to name the pictures of the familiar concepts (e.g., cat) using the novel names (e.g., *Marp*). The words were taught in two conditions, categorically related (*CRel*) and unrelated (*UnRel*). We wish to know whether, across the first 8 naming attempts, the participants were more accurate in the unrelated condition.
+This file contains data from a word learning task. German native speakers learned new names for familiar concepts (e.g., *Marp* for cat), simulating word learning in a foreign language. As part of the learning procedure, they were asked to name the pictures of the familiar concepts (e.g., cat) using the novel names (e.g., *Marp*). The words were taught in two conditions, categorically related (*CRel*) and unrelated (*UnRel*). We wish to know whether, averaged across the first 8 naming attempts, the participants were more accurate in the unrelated condition.
 
+* `Subj`: Participant ID (N = 60)
+* `Session`: there were 2 sessions, with 8 naming attempts in Session 1 and 4 naming attempts in Session 2
+* `NamingAttempts`: factor with 1-12 levels
+* `LC`: factor with 2 levels, `CRel` and `UnRel`
+* `Response`: participant's response
+* `Accuracy`: a factor with 2 levels, `0` = incorrect responses, `1` = correct responses
+* `RT`: response times
 
+Restrict the dataset to the first 8 naming attempts:
 
-named (in German) pictures of familiar concepts (e.g., elephant) with superimposed written word distractors. The distractors were either semantically related (e.g., "cat") or unrelated (e.g., "hammer") to the depicted concepts. The distractors were (a) German words, (b) novel words that the participants had learned earlier in the experiment, or (c) unknown pseudowords. 
+```{r}
+data2 <- data %>%
+  filter(Session == "1")
+```
+
+Adjust factor levels for the independent variable and random terms:
+
+```{r}
+data2$LC <- factor(data2$LC)
+levels(data2$LC)
+
+data2$Subj <- factor(data2$Subj)
+data2$NovelName <- factor(data2$NovelName)
+```
