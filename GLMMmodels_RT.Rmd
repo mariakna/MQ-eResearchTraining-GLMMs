@@ -379,7 +379,7 @@ How can we deal with that? There are 2 (main) options:
 
 There is an active debate about which approach is best. 
 
-The most important reasons for transforming the raw data have to do with some of the core properties of raw RTs (see e.g., [Schramm & Rouder, 2019](https://psyarxiv.com/9ksa6/) for more detail):
+The most important reasons for transforming the raw data have to do with some of the core properties of raw RTs (for more detail, see e.g., [Schramm & Rouder, 2019](https://psyarxiv.com/9ksa6/)):
 
 1. RTs are unimodal with a skewed upper tail.
 2. Manipulations that slow RTs tend to increase both the mean and SD with relatively small effects in the skewed tail. While such distributions as gamma, inverse Gaussian, ex-Gaussian, ex-Wald, lognormal, Weibull and Gumble can accomodate this feature, the normal distribution cannot.
@@ -389,11 +389,11 @@ Due to these properties, many statisticians believe that transformations may hel
 
 However, another property of RTs is that all RT distributions have a substantial shift away from zero. If such distributions are transformed, the shape and the scale of the resulting transformed distribution might be radically different from the orginal distribution of raw RTs. Furthermore, because the degree of variance is a function of the shift, transformations may work for some paradigms but not for others.
 
-[Lo & Andrews, 2015](https://www.frontiersin.org/articles/10.3389/fpsyg.2015.01171/full) have argued that the best approach would be to analyse raw RTs with the generalised linear mixed effects model. [Schramm & Rouder, 2019](https://psyarxiv.com/9ksa6/) used data simulations to show that lognormal transformations do not offer any advantages as compared to raw data, while reciprocal transformations might even decrease the statistical power (albeit by a small margin). Other researchers argue that the best practice would be to conduct both types of analyses (on raw and transformed data) and only consider the effects significant if both models produced a significant outcome (e.g., [Brysbaert & Stevens, 2018](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6646942/)). Importantly, because the distributions can be interpreted as data generating processes, the choice of a distribution often has cognitive interpretations [(e.g., De Boeck & Jeon, 2019)](https://www.frontiersin.org/articles/10.3389/fpsyg.2019.00102/full), and should be done very carefully.
+[Lo and Andrews (2015)](https://www.frontiersin.org/articles/10.3389/fpsyg.2015.01171/full) have argued that the best approach would be to analyse raw RTs with the generalised linear mixed effects model. [Schramm and Rouder (2019)](https://psyarxiv.com/9ksa6/) used data simulations to show that lognormal transformations do not offer any advantages as compared to raw data, while reciprocal transformations might even decrease the statistical power (albeit by a small margin). Other researchers argue that the best practice would be to conduct both types of analyses (on raw and transformed data) and only consider the effects significant if both models produced a significant outcome (e.g., [Brysbaert & Stevens, 2018](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6646942/)). Importantly, because the distributions can be interpreted as data generating processes, the choice of a distribution often has cognitive interpretations (e.g., [De Boeck & Jeon, 2019)](https://www.frontiersin.org/articles/10.3389/fpsyg.2019.00102/full)), and should be done very carefully.
 
 It is beyond the scope of today's webinar to discuss this in depth so, in the following sections, I will give you examples on how to fit models on both transformed and raw data. 
 
-## How to transform?
+## If we do transform, which transformation do we choose and how?
 
 ```{r}
 boxcox(m1)
@@ -624,9 +624,9 @@ $\rho$ is the correlation parameter.
   
 Imagine you choose option 2. What do you do if the model fails? 
 
-In fact, after [Barr et al., 2013](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3881361/) had recommended to only fit models with the maximal random effects structure, many researchers have been having trouble getting their models to converge. The main problem with maximal models though is overparametrisation, a situation, when the model is so complex that it is unable to provide accurate estimates (e.g., because there is simply not enough data) and is uninterpretable.
+In fact, after [Barr et al. (2013)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3881361/) had recommended to only fit models with the maximal random effects structure, many researchers have been having trouble getting their models to converge. The main problem with maximal models though is overparametrisation, a situation, when the model is so complex that it is unable to provide accurate estimates (e.g., because there is simply not enough data) and is uninterpretable.
 
-An alternative approach is, therefore, to build a model that is **supported by the data** [(Bates et al., 2015)](https://arxiv.org/abs/1506.04967). This means developing a model, in which all variance components and correlation parameters are supported by the data. 
+An alternative approach is, therefore, to build a model that is **supported by the data** ([Bates et al., 2015](https://arxiv.org/abs/1506.04967)). This means developing a model, in which all variance components and correlation parameters are supported by the data. 
 
 ## Option 1 (transformed RTs)
 
@@ -645,7 +645,7 @@ summary(rePCA(mod1))
 VarCorr(mod1)
 ```
 
-There is one component - the adjustment to the slope for `Bas.SemUnRel` - that does not explain any variance; it should be removed.
+The adjustment to the slope for `Bas.SemUnRel` does not explain any variance and should be removed.
 
 Note that, at this stage, we do not even need to check whether the model converged or not. And we certainly do not need to check the p-values.
 
@@ -926,6 +926,12 @@ mod3b_raw <- glmer(RT ~ 1 +
 anova(mod3b_raw, mod2b_raw)
 ```
 
-No wonder (remember the conditional $R^2$, for example!). The next step should probably be trying out the inverse link. One could also examine other distributions (e.g., Inverse Gaussian). We chose Gamma with the identity link based on the theoretical considerations; yet, in this case it seems like we might want to check out other options. Try this out in your own time and let me know what you get.
+No wonder (remember the conditional $R^2$, for example!). What shall we do now?
+
+* Try out the inverse link? 
+* Use other distributions (e.g., Inverse Gaussian)? We chose Gamma with the identity link based on the theoretical considerations; yet, maybe other options are better?
+* Do you have any ideas what else might be going on?
+
+This would be a good exercise to do at home to make sure you understand the material. Let me know how you go! 
 
 
