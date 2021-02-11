@@ -664,41 +664,59 @@ summary(rePCA(mod2))
 VarCorr(mod2)
 ```
 
-Looks better. Let's now check whether the residuals follow the normal distribution:
-
-```{r}
-qqnorm(resid(mod2))
-plot(fitted(mod2), resid(mod2)) 
-```
-
-They do, and there isn't any evidence of heteroscedasticity in the residuals against fitted values plot.
-
-Now we can finally take a look at the results.
+Looks better, any convergence warnings?
 
 ```{r}
 print(summary(mod2, corr = F))
 ```
 
-Two things to note here:
+Yes! `lmer()` and `glmer()` fits often produce convergence errors; however, they are very often false positives (type `?convergence` in the console to learn more). There are many things we can do to fix this.
 
-1. This model was fit using **REML (Restricted Maximum Likelihood Estimation)**, which is a way to estimate variance components. REML works by first getting regression residuals for the observations modeled by the fixed effects portion of the model. At this point, it ignores any variance components and estimates the statistical model for these residuals. Next, it uses **MLE (maximum likelihood estimation)** on the residuals to get estimates of the variance components. The main advantage of this approach is that the MLE adjusts the variance estimates for the fact that we are working with regression residuals ([here](http://users.stat.umn.edu/~gary/classes/5303/handouts/REML.pdf) is a super short paper/handout on this). Ben Bolker says that it's generally good to use REML, if it is available, when you are interested in the magnitude of the random effects variances, but never when you are comparing models with different fixed effects via hypothesis tests or information-theoretic criteria such as AIC.
+We start by adjusting the convergence tolerance with the `optctrl` argument to `lmerControl`. My preferred optimiser is the bound optimization by quadratic approximation (Bobyqa) with a set of 200000 iterations (it is recommended to use at least 100000). Note that the choice of an optimiser can change the results of the model so it is recommended to fit models with different optimisers and then compare the outcomes. [Here](http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/) is a useful and short blog post about it. 
 
-2. Optimisers: If you have tons of data, modelling with `lme4` can take time. This is partly due to `lme4` performing thousands of convergence checks. The choice of an optimiser can change the results of the model so it is recommended to fit models with different optimisers and then compare the outcomes. [Here](http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/) is a useful and short blog post about it. Importantly, make sure you understand how optimsers work and how they differ from each other before you use them.
+```{r}
+mod3 <- lmer(transRT ~ Bas.SemUnRel + SemRel.SemUnRel +
+                (1 + SemRel.SemUnRel||Subj) + 
+                (1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3,
+             control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
+
+print(summary(mod3, corr = F))
+```
+
+One more thing to note here:
+
+This model was fit using **REML (Restricted Maximum Likelihood Estimation)**, which is a way to estimate variance components. REML works by first getting regression residuals for the observations modeled by the fixed effects portion of the model. At this point, it ignores any variance components and estimates the statistical model for these residuals. Next, it uses **MLE (maximum likelihood estimation)** on the residuals to get estimates of the variance components. The main advantage of this approach is that the MLE adjusts the variance estimates for the fact that we are working with regression residuals ([here](http://users.stat.umn.edu/~gary/classes/5303/handouts/REML.pdf) is a super short paper/handout on this). Ben Bolker says that it's generally good to use REML, if it is available, when you are interested in the magnitude of the random effects variances, but never when you are comparing models with different fixed effects via hypothesis tests or information-theoretic criteria such as AIC.
+
+Let's now check whether the residuals are normally disributed:
+
+```{r}
+qqnorm(resid(mod3))
+plot(fitted(mod3), resid(mod3)) 
+```
+
+They do, and there isn't any evidence of heteroscedasticity in the residuals against fitted values plot.
 
 Alright... It would seem that we cannot reject the null for the first contrast (semantically unrelated vs. unknown) but that we can for the second contrast (semantically related vs. unrelated).
 
 **Confidence intervals**
 
 ```{r}
-# this will take some time!!
-ConfidInt <- confint(mod2, parm = c("(Intercept)", "Bas.SemUnRel", "SemRel.SemUnRel"), method = "boot")
+ConfidInt <- confint(mod3, parm = c("(Intercept)", "Bas.SemUnRel", "SemRel.SemUnRel"), method = "boot")
 round(ConfidInt, 3)
 ```
 
 **Plot of effects**
 
 ```{r}
-plot_model(mod2, title = "", terms = keep.terms, axis.labels = rev(labels), 
+# run this if the plot doesn't work on your machine:
+Sys.setlocale(category = "LC_ALL", "English_United States.1252")
+
+labels <- c("Contrast 1: German sem. unrelated vs. untrained pseudoword distractors", 
+            "Contrast 2: German sem. related vs. unrelated distractors")
+
+keep.terms <- names(fixef(mod3)[-1])
+
+plot_model(mod3, title = "", terms = keep.terms, axis.labels = rev(labels), 
            type = "est", sort.est = NULL, colors = "bw", 
            show.values = TRUE, show.p = TRUE, value.offset = 0.4, 
            value.size = 4, dot.size = 2, line.size = 1, 
@@ -718,11 +736,6 @@ Check out `tidy()` and `augment()` functions from the package `broom.mixed` for 
 **Table of effects**
 
 ```{r}
-labels <- c("Contrast 1: German sem. unrelated vs. untrained pseudoword distractors", 
-            "Contrast 2: German sem. related vs. unrelated distractors")
-
-keep.terms <- names(fixef(mod2)[-1])
-
 tab_model(mod2, 
           terms = keep.terms, 
           auto.label = FALSE, 
