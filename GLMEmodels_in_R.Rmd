@@ -1,5 +1,5 @@
 ---
-title: "Data analysis with (generalised) linear mixed effects models in R"
+title: "Analysing RT data with (generalised) linear mixed effects models in R"
 author: "Maria Korochkina"
 date: "Last update: `r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -38,9 +38,7 @@ library("rms")
 library("broom.mixed")
 ```
 
-# Response times
-
-## Load data
+# Load data
 
 Data that we will be using today is available [here](https://github.com/mariakna/MQ-eResearchTraning--G-LMEmodels). 
 
@@ -50,7 +48,7 @@ Download the file *pwiExp.xlsx*, save it in a directory of your choice, make thi
 data <- read.xlsx("pwiExp.xlsx", sheet = 1)
 ```
 
-### Data description
+## Data description
 
 This file contains data from a picture-word interference task. In this task, German native speakers named (in German) pictures of familiar concepts (e.g., elephant) with superimposed written word distractors. The distractors were either semantically related (e.g., "cat") or unrelated (e.g., "hammer") to the depicted concepts. The distractors were (a) German words, (b) novel words that the participants had learned earlier in the experiment, or (c) unknown pseudowords. 
 
@@ -97,7 +95,7 @@ data2$Subj <- factor(data2$Subj)
 data2$TargetAnswer <- factor(data2$TargetAnswer)
 ```
 
-## Inspect data
+# Inspect data
 
 This step is essential and should not be skipped as it allows the researcher to ensure that the data looks as it should. You can check your data in any way you want. I often use a function called `xtabs()`:
 
@@ -108,9 +106,9 @@ xtabs(~ ItemType + Cond,data2)
 xtabs(~ List + Cond,data2) 
 ```
 
-## Prepare data for analysis
+# Prepare data for analysis
 
-### Remove incorrect responses
+## Remove incorrect responses
 
 Check accuracy and exclude observations with incorrect responses.
 
@@ -142,7 +140,7 @@ dataCorr <- data2 %>%
   filter(Accuracy == 1)
 ```
 
-### Data trimming
+## Data trimming
 
 There are many ways to do it, and it often depends on your research question and your knowledge about the processes you are studying. For example, in word production, it often makes sense to remove data points with super fast and super slow responses. 
 
@@ -159,7 +157,7 @@ dataCorr2 <- dataCorr %>%
  filter(RT > 300 & RT < 2000) # 12 obs removed
 ```
 
-## Contrast coding
+# Contrast coding
 
 <style>
 div.blue{background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
@@ -182,7 +180,7 @@ How can we test these hypotheses?
 
 Whatever we choose, we need to code the specified contrasts first. Good understanding of contrast coding is essential, and I will now show you why.
 
-### Option 1: Treatment vs. sum contrasts for a factor with 2 levels
+## Option 1: Treatment vs. sum contrasts for a factor with 2 levels
 
 Imagine we opt for option 1 and restrict our dataset to data points with the semantically related and unrelated distractors to address hypothesis 2:
 
@@ -293,7 +291,7 @@ div.blue{background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
 </div>
 <p>  </p>
 
-### Option 2: Sum contrasts for a factor with 3 levels
+## Option 2: Sum contrasts for a factor with 3 levels
 
 Let us now think how we can test the two contrats (unrelated vs. unknown, and related vs. unrelated) in one model.
 
@@ -360,7 +358,7 @@ dataCorr2$SemRel.SemUnRel <- mat[, 3]
 dataCorr2[1:5,18:ncol(dataCorr2)]
 ```
 
-## Transform or not transform?
+# Transform or not transform?
 
 The core assumption of the linear mixed effects models is that the residuals and random effect coefficients are independent and identically distributed. Ideally, the residuals should be normally distributed, and, if this assumption is violated, the model is simply inadequate.
 
@@ -395,7 +393,7 @@ However, another property of RTs is that all RT distributions have a substantial
 
 It is beyond the scope of today's webinar to discuss this in depth so, in the following sections, I will give you examples on how to fit models on both transformed and raw data. 
 
-### How to transform?
+## How to transform?
 
 ```{r}
 boxcox(m1)
@@ -416,7 +414,7 @@ hist(residuals(mInv))
 qqPlot(residuals(mInv))
 ```
 
-## Summary statistics and plots
+# Summary statistics and plots
 
 Let's visualise the data before we fit the models.
 
@@ -425,7 +423,7 @@ Let's visualise the data before we fit the models.
                        idvar = "Subj", na.rm = FALSE, conf.interval = .95))
 ```
 
-### Plot all conditions
+## Plot all conditions
 
 ```{r}
 ggplot(RT, aes(x = Cond, y = RT, fill = Cond)) +
@@ -452,7 +450,7 @@ ggplot(RT, aes(x = Cond, y = RT, fill = Cond)) +
   scale_x_discrete(labels = c("Unknown pseudoword", "German sem. related", "German sem. unrelated"))
 ```
 
-### Plot contrast 1 (related vs. unrelated)
+## Plot contrast 1 (related vs. unrelated)
 
 ```{r}
 dataG <- dataCorr3 %>%
@@ -486,7 +484,7 @@ ggplot(RT1, aes(x = Cond, y = RT, fill = Cond)) +
   scale_x_discrete(labels = c("German sem. related", "German sem. unrelated"))
 ```
 
-### Plot contrast 2 (unknown vs. unrelated)
+## Plot contrast 2 (unknown vs. unrelated)
 
 ```{r}
 dataGU <- dataCorr3 %>%
@@ -519,7 +517,7 @@ ggplot(RT2, aes(x = Cond, y = RT, fill = Cond)) +
   scale_x_discrete(labels = c("Unknown pseudoword","German sem. unrelated"))
 ```
 
-## Fit the model
+# Fit the model
 
 There are two main approaches to model building (e.g., [Schad et al., 2019](https://arxiv.org/abs/1904.12765)):
 
@@ -630,7 +628,7 @@ In fact, after [Barr et al., 2013](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC
 
 An alternative approach is, therefore, to build a model that is **supported by the data** [(Bates et al., 2015)](https://arxiv.org/abs/1506.04967). This means developing a model, in which all variance components and correlation parameters are supported by the data. 
 
-### Option 1 (transformed RTs)
+## Option 1 (transformed RTs)
 
 In this webinar, we will start by fitting a varying intercepts and slopes model (without correlation) and then simplify it by assessing the random effects structure with the Principled Component Analysis (PCA). 
 
@@ -670,7 +668,7 @@ Looks better, any convergence warnings?
 print(summary(mod2, corr = F))
 ```
 
-Yes! `lmer()` and `glmer()` fits often produce convergence errors; however, they are very often false positives (type `?convergence` in the console to learn more). There are many things we can do to fix this.
+Yes. `lmer()` and `glmer()` fits often produce convergence errors; however, they are very often false positives (type `?convergence` in the console to learn more). There are many things we can do to fix this.
 
 We start by adjusting the convergence tolerance with the `optctrl` argument to `lmerControl`. My preferred optimiser is the bound optimization by quadratic approximation (Bobyqa) with a set of 200000 iterations (it is recommended to use at least 100000). Note that the choice of an optimiser can change the results of the model so it is recommended to fit models with different optimisers and then compare the outcomes. [Here](http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/) is a useful and short blog post about it. 
 
@@ -683,9 +681,42 @@ mod3 <- lmer(transRT ~ Bas.SemUnRel + SemRel.SemUnRel +
 print(summary(mod3, corr = F))
 ```
 
+Looks good! The problem is kind of solved (see [here](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#reml-for-glmms) and/or type `?convergence` in the console to find more tips). But we still need to make sure that the model would perform similarly with other optimisers.
+
+```{r}
+fit_all <- lme4::allFit(mod2, maxfun = 2e5)
+ss <- summary(fit_all)
+```
+
+We can so check which optimisers worked and which not:
+
+```{r}
+ss$which.OK
+```
+
+And we can inspect warnings that these models produced:
+
+```{r}
+is.OK <- sapply(fit_all, is, "merMod")
+fit_all.OK <- fit_all[is.OK]
+lapply(fit_all.OK,function(x) x@optinfo$conv$lme4$messages)
+```
+
+We can also extract the estimates of the fixed effects and compare them:
+
+```{r}
+ss$fixef
+```
+
+Most importantly, we need to inspect the log-likelihoods for all models. If they are close to each other, we can conclude that the optimiser does not influence the parameter estimates.
+
+```{r}
+ss$llik
+```
+
 One more thing to note here:
 
-This model was fit using **REML (Restricted Maximum Likelihood Estimation)**, which is a way to estimate variance components. REML works by first getting regression residuals for the observations modeled by the fixed effects portion of the model. At this point, it ignores any variance components and estimates the statistical model for these residuals. Next, it uses **MLE (maximum likelihood estimation)** on the residuals to get estimates of the variance components. The main advantage of this approach is that the MLE adjusts the variance estimates for the fact that we are working with regression residuals ([here](http://users.stat.umn.edu/~gary/classes/5303/handouts/REML.pdf) is a super short paper/handout on this). Ben Bolker says that it's generally good to use REML, if it is available, when you are interested in the magnitude of the random effects variances, but never when you are comparing models with different fixed effects via hypothesis tests or information-theoretic criteria such as AIC.
+The models above were fit using **REML (Restricted Maximum Likelihood Estimation)**, which is a way to estimate variance components. REML works by first getting regression residuals for the observations modeled by the fixed effects portion of the model. At this point, it ignores any variance components and estimates the statistical model for these residuals. Next, it uses **MLE (maximum likelihood estimation)** on the residuals to get estimates of the variance components. The main advantage of this approach is that the MLE adjusts the variance estimates for the fact that we are working with regression residuals ([here](http://users.stat.umn.edu/~gary/classes/5303/handouts/REML.pdf) is a super short paper/handout on this). Ben Bolker says that it's generally good to use REML, if it is available, when you are interested in the magnitude of the random effects variances, but never when you are comparing models with different fixed effects via hypothesis tests or information-theoretic criteria such as AIC.
 
 Let's now check whether the residuals are normally disributed:
 
@@ -708,9 +739,6 @@ round(ConfidInt, 3)
 **Plot of effects**
 
 ```{r}
-# run this if the plot doesn't work on your machine:
-Sys.setlocale(category = "LC_ALL", "English_United States.1252")
-
 labels <- c("Contrast 1: German sem. unrelated vs. untrained pseudoword distractors", 
             "Contrast 2: German sem. related vs. unrelated distractors")
 
@@ -736,7 +764,7 @@ Check out `tidy()` and `augment()` functions from the package `broom.mixed` for 
 **Table of effects**
 
 ```{r}
-tab_model(mod2, 
+tab_model(mod3, 
           terms = keep.terms, 
           auto.label = FALSE, 
           pred.labels = labels, 
@@ -749,25 +777,30 @@ tab_model(mod2,
 
 Note that the marginal $R^2$ shows the variance explained only by the fixed effects, while the conditional $R^2$ provides the variance explained by the entire model (including the random effects).
 
-Note that because one of the failure to reject the null for the first contrast, a better model might be the one that only includes the second contrast:
+Note also that because of the failure to reject the null for the first contrast, a better model might be the one that only includes the second contrast:
 
 ```{r}
-mod2b <- lmer(transRT ~ 1 + SemRel.SemUnRel +
+mod3b <- lmer(transRT ~ SemRel.SemUnRel +
                 (1 + SemRel.SemUnRel||Subj) + 
-                (1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3)
+                (1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3,
+             control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
+       
 
-anova(mod2, mod2b)
+anova(mod3, mod3b)
 ```
 
-You can also extract AIC, BIC and log-likelihood from the model:
+Finally, is the model with a single predictor better than the model without any predictors?
 
 ```{r}
-glance(mod2)
+mod3c <- lmer(transRT ~ 1 +
+                (1 + SemRel.SemUnRel||Subj) + 
+                (1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3,
+             control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
+       
+anova(mod3b, mod3c)
 ```
 
-Check out `tidy()` and `augment()` functions from the package `broom.mixed` for further options.
-
-### Option 2 (raw RTs)
+## Option 2 (raw RTs)
 
 GLMs (and GLMMs) are a class of fixed (and random) effects regression models that can be applied to several types of dependent variables (or distributions). There are three specifications in a GLM:
 
@@ -813,79 +846,39 @@ summary(rePCA(mod1_raw))
 VarCorr(mod1_raw)
 ```
 
-Simplify:
-
-```{r}
-mod2_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
-                (1 + SemRel.SemUnRel||Subj) + 
-                (1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3, 
-                family = Gamma(link = "identity"))
-
-summary(rePCA(mod2_raw))
-VarCorr(mod2_raw)
-```
-
 The model looks alright, but did it converge?
 
 ```{r}
-print(summary(mod2_raw, corr = F))
+print(summary(mod1_raw, corr = F))
 ```
 
-No surprise here. `glmer()` fits often produce convergence errors; however, they are very often false positives (type `?convergence` in the console to learn more). There are many things we can do to fix this.
-
-We start by adjusting the convergence tolerance with the `optctrl` argument to `glmerControl`. My preferred optimiser is the bound optimization by quadratic approximation (Bobyqa) with a set of 200000 iterations (it is recommended to use at least 100000).
+No surprise here. Again, we try to solve this by adjusting the convergence tolerance:
 
 ```{r}
-mod3_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
-                (1 + SemRel.SemUnRel||Subj) + 
+mod2_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+                (1 + Bas.SemUnRel + SemRel.SemUnRel||Subj) + 
                 (1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3, 
                 family = Gamma(link = "identity"),
                 control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
 
-print(summary(mod3_raw, corr = F))
+print(summary(mod2_raw, corr = F))
 ```
 
-Looks good! The problem is kind of solved (see [here](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#reml-for-glmms) and/or type `?convergence` in the console to find more tips). But we still need to make sure that the model would perform similarly with other optimisers.
+What about other optimisers?
 
 ```{r}
-fit_all <- lme4::allFit(mod2_raw, maxfun = 2e5)
+fit_all <- lme4::allFit(mod1_raw, maxfun = 2e5)
 ss <- summary(fit_all)
-```
-
-We can so check which optimisers worked and which not:
-
-```{r}
-ss$which.OK
-```
-
-And we can inspect warnings that these models produced:
-
-```{r}
-is.OK <- sapply(fit_all, is, "merMod")
-fit_all.OK <- fit_all[is.OK]
-lapply(fit_all.OK,function(x) x@optinfo$conv$lme4$messages)
-```
-
-We can also extract the estimates of the fixed effects and compare them:
-
-```{r}
 ss$fixef
-```
-
-Most importantly, we need to inspect the log-likelihoods for all models. If they are close to each other, we can conclude that the optimiser does not influence the parameter estimates.
-
-```{r}
 ss$llik
 ```
 
 Let us now expect the model residuals:
 
 ```{r}
-plot(residuals(mod3_raw))
-plot(fitted(mod3_raw), resid(mod3_raw)) 
+plot(residuals(mod2_raw))
+plot(fitted(mod2_raw), resid(mod2_raw)) 
 ```
-
-Looks okay, but it could be that the inverse link might provide a better fit. One could also examine other distributions (e.g., Inverse Gaussian).
 
 **Table of effects**
 
@@ -893,9 +886,9 @@ Looks okay, but it could be that the inverse link might provide a better fit. On
 labels <- c("Contrast 1: German sem. unrelated vs. untrained pseudoword distractors", 
             "Contrast 2: German sem. related vs. unrelated distractors")
 
-keep.terms <- names(fixef(mod3_raw)[-1])
+keep.terms <- names(fixef(mod2_raw)[-1])
 
-tab_model(mod3_raw,
+tab_model(mod2_raw,
           transform = NULL,
           terms = keep.terms, 
           auto.label = FALSE, 
@@ -907,20 +900,32 @@ tab_model(mod3_raw,
           emph.p = FALSE, dv.labels = "Dependent Variable", show.icc = FALSE)
 ```
 
-Is this model better than a model with only one contrast?
+Look at the conditional $R^2$ - is it a realistic scenario that a model could explain 100% of the variance?..
+
+Is this model better than the one without the first predictor?
 
 ```{r}
-mod3b_raw <- glmer(RT ~ 1 + SemRel.SemUnRel +
-                (1 + SemRel.SemUnRel||Subj) + 
+mod2b_raw <- glmer(RT ~ SemRel.SemUnRel +
+                (1 + Bas.SemUnRel + SemRel.SemUnRel||Subj) + 
                 (1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3, 
                 family = Gamma(link = "identity"),
                 control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
 
-anova(mod3_raw, mod3b_raw)
+anova(mod2_raw, mod2b_raw)
 ```
 
-No wonder given the value of the conditional $R^2$... The next step should probably be trying out the inverse link.
+Finally, is the model with the second predictor better than the intercept-only model?
 
-# Accuracy
+```{r}
+mod3b_raw <- glmer(RT ~ 1 +
+                (1 + Bas.SemUnRel + SemRel.SemUnRel||Subj) + 
+                (1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3, 
+                family = Gamma(link = "identity"),
+                control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
 
- for accuracy https://stats.idre.ucla.edu/other/mult-pkg/introduction-to-generalized-linear-mixed-models/
+anova(mod3b_raw, mod2b_raw)
+```
+
+No wonder (remember the conditional $R^2$, for example!). The next step should probably be trying out the inverse link. One could also examine other distributions (e.g., Inverse Gaussian). We chose Gamma with the identity link based on the theoretical considerations; yet, in this case it seems like we might want to check out other options. Try this out in your own time and let me know what you get.
+
+
