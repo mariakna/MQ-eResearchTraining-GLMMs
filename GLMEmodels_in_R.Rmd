@@ -1,5 +1,5 @@
 ---
-title: "Analysis of RT data using (generalised) linear mixed effects models in R"
+title: "Data analysis with (generalised) linear mixed effects models in R"
 author: "Maria Korochkina"
 date: "Last update: `r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -40,11 +40,8 @@ library("broom.mixed")
 
 # Response times
 
-<<<<<<< HEAD
-=======
 ## Load data
 
->>>>>>> d0edc6a5accb44f32d2bf46e5d908ac81b7845e9
 Data that we will be using today is available [here](https://github.com/mariakna/MQ-eResearchTraning--G-LMEmodels). 
 
 Download the file *pwiExp.xlsx*, save it in a directory of your choice, make this directory your working directory by using the command `setwd()` and load the file as shown below:
@@ -55,11 +52,7 @@ data <- read.xlsx("pwiExp.xlsx", sheet = 1)
 
 ### Data description
 
-<<<<<<< HEAD
-This file contains data from a picture-word interference task. In this task, German native speakers named (in German) pictures of familiar concepts (e.g., elephant) with superimposed written word distractors. The distractors were either semantically related (e.g., "cat") or unrelated (e.g., "hammer") to the depicted concepts. The distractors were (a) German words, (b) novel words that the participants had learned earlier, or (c) unknown pseudowords. 
-=======
 This file contains data from a picture-word interference task. In this task, German native speakers named (in German) pictures of familiar concepts (e.g., elephant) with superimposed written word distractors. The distractors were either semantically related (e.g., "cat") or unrelated (e.g., "hammer") to the depicted concepts. The distractors were (a) German words, (b) novel words that the participants had learned earlier in the experiment, or (c) unknown pseudowords. 
->>>>>>> d0edc6a5accb44f32d2bf46e5d908ac81b7845e9
 
 <center>
 ![FigName](pwi.png){width=300px}
@@ -205,6 +198,7 @@ levels(dataOpt1$Cond) # Baseline is still included
 dataOpt1$Cond <- factor(dataOpt1$Cond)
 levels(dataOpt1$Cond) # Baseline is no longer there
 ```
+
 Now imagine that we do not know anything about contrast coding and simply fit the model without giving it much thought (don't worry about not including random terms at the moment):
 
 ```{r}
@@ -212,6 +206,7 @@ model1 <- lm(RT ~ Cond, data = dataOpt1)
 
 round(summary(model1)$coef,3)
 ```
+
 How does R arrive at these particular values for the intercept and the slope? We can find out by inspecting the current contrasts of the factor `Cond`:
 
 ```{r}
@@ -669,9 +664,7 @@ summary(rePCA(mod2))
 VarCorr(mod2)
 ```
 
-Looks better. Let's make sure that the model provides a good fit to the data.
-
-We start by checking whether the residuals follow the normal distribution:
+Looks better. Let's now check whether the residuals follow the normal distribution:
 
 ```{r}
 qqnorm(resid(mod2))
@@ -743,25 +736,23 @@ tab_model(mod2,
 
 Note that the marginal $R^2$ shows the variance explained only by the fixed effects, while the conditional $R^2$ provides the variance explained by the entire model (including the random effects).
 
-We can compare whether a model without a predictor is better than a model with a predictor:
+Note that because one of the failure to reject the null for the first contrast, a better model might be the one that only includes the second contrast:
 
 ```{r}
-mod2b <- lmer(transRT ~ 1 +
+mod2b <- lmer(transRT ~ 1 + SemRel.SemUnRel +
                 (1 + SemRel.SemUnRel||Subj) + 
                 (1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3)
 
 anova(mod2, mod2b)
 ```
-<<<<<<< HEAD
+
 You can also extract AIC, BIC and log-likelihood from the model:
 
 ```{r}
 glance(mod2)
 ```
-Check out `tidy()` and `augment()` functions from the package `broom.mixed` for further options.
 
-## Option 2 (raw RTs)
-=======
+Check out `tidy()` and `augment()` functions from the package `broom.mixed` for further options.
 
 ### Option 2 (raw RTs)
 
@@ -784,7 +775,6 @@ $$
 Thereby, the link function and the variance depend on the distribution of $Y_{i}$ (within the exponential family). For example, for a binary outcome, the logistic link function is used, for a count outcome, the log link function, and for the continuous outcome, the identity link function (note that these are the most common and not the only possible options).
 
 In a GLMM, the linear predictor is a combination of the fixed and random effects excluding the residuals:
->>>>>>> d0edc6a5accb44f32d2bf46e5d908ac81b7845e9
 
 $$
 \eta_{ij} = x^{'}_{ij} \beta + Z^{'}_{ij}u_{j}
@@ -801,16 +791,10 @@ The choice of the gamma distribution is mainly motivated by considerations outli
 * Because we assume that RT is a direct measure of the time required to name a picture, the function binding the expected outcome and the effect of the predictor is the identity link function.
 
 ```{r}
-<<<<<<< HEAD
-maxmod_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
-                (1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) + 
-                (1 + Bas.SemUnRel + SemRel.SemUnRel|TargetAnswer), dataCorr3, family = Gamma(link = "identity"))
-=======
 mod1_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
                 (1 + Bas.SemUnRel + SemRel.SemUnRel||Subj) + 
                 (1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3, 
                 family = Gamma(link = "identity"))
->>>>>>> d0edc6a5accb44f32d2bf46e5d908ac81b7845e9
 
 summary(rePCA(mod1_raw))
 VarCorr(mod1_raw)
@@ -820,21 +804,14 @@ Simplify:
 
 ```{r}
 mod2_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
-<<<<<<< HEAD
-                (1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) + 
-                (1 + SemRel.SemUnRel|TargetAnswer), dataCorr3, family = Gamma(link = "identity"))
-=======
                 (1 + SemRel.SemUnRel||Subj) + 
                 (1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3, 
                 family = Gamma(link = "identity"))
->>>>>>> d0edc6a5accb44f32d2bf46e5d908ac81b7845e9
 
 summary(rePCA(mod2_raw))
 VarCorr(mod2_raw)
 ```
 
-<<<<<<< HEAD
-=======
 The model looks alright, but did it converge?
 
 ```{r}
@@ -917,10 +894,10 @@ tab_model(mod3_raw,
           emph.p = FALSE, dv.labels = "Dependent Variable", show.icc = FALSE)
 ```
 
-Is this model better than a model without predictors?
+Is this model better than a model with only one contrast?
 
 ```{r}
-mod3b_raw <- glmer(RT ~ 1 +
+mod3b_raw <- glmer(RT ~ 1 + SemRel.SemUnRel +
                 (1 + SemRel.SemUnRel||Subj) + 
                 (1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3, 
                 family = Gamma(link = "identity"),
@@ -934,4 +911,3 @@ No wonder given the value of the conditional $R^2$... The next step should proba
 # Accuracy
 
  for accuracy https://stats.idre.ucla.edu/other/mult-pkg/introduction-to-generalized-linear-mixed-models/
->>>>>>> d0edc6a5accb44f32d2bf46e5d908ac81b7845e9
