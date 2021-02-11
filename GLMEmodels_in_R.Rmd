@@ -1,5 +1,5 @@
 ---
-title: "Data analysis using (generalised) linear mixed effects models in R"
+title: "Analysis of RT data using (generalised) linear mixed effects models in R"
 author: "Maria Korochkina"
 date: "Last update: `r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -642,6 +642,7 @@ Check the structure of the model:
 summary(rePCA(maxmod))
 VarCorr(maxmod)
 ```
+
 There is one component - the adjustment to the slope for `Bas.SemUnRel` - that does not explain any variance; it should be removed.
 
 Note that, at this stage, we do not even need to check whether the model converged or not. And we certainly do not need to check the p-values.
@@ -688,8 +689,8 @@ Alright... It would seem that we cannot reject the null for the first contrast (
 
 ```{r}
 # this will take some time!!
-#ConfidInt <- confint(mod2, parm = c("(Intercept)", "Bas.SemUnRel", "SemRel.SemUnRel"), method = "boot")
-#round(ConfidInt, 3)
+ConfidInt <- confint(mod2, parm = c("(Intercept)", "Bas.SemUnRel", "SemRel.SemUnRel"), method = "boot")
+round(ConfidInt, 3)
 ```
 
 **Table of effects**
@@ -733,15 +734,40 @@ glance(mod2)
 
 Check out `tidy()` and `augment()` functions from the package `broom.mixed` for further options. If you need a Latex table with model output, the `stargazer()` function from the `stargazer` package will generate it for you.
 
-## Option 2 (raw RTs): sneak peek 
+## Option 2 (raw RTs)
 
-We will fit a generalised linear mixed effects model with a gamma distribution and identity link.
+GLMs (and GLMMs) are a class of fixed (and random) effects regression models that can be applied to several types of dependent variables (or distributions). There are three specifications in a GLM:
+
+1. A linear predictor $\eta_{i}$ that has the form
+
+$$
+\eta_{i} = x^{'}_{i} \beta
+$$
+where $x_{i}$ is the vector of regressors for unit *i* with fixed effects $\beta$. 
+
+2. A link function $g(\cdot)$ that coverts the expected value $\mu_{i}$ of the outcome variable $Y_{i}$ to the linear predictor $\eta_{i}$: 
+
+$$
+g(\mu_{i}) = \eta_{i}
+$$
+3. Variance in terms of the mean $\mu{i}$.
+
+Thereby, the link function and the variance depend on the distribution of $Y_{i}$ (within the exponential family). For example, for a binary outcome, the logistic link function is used, for a count outcome, the log link function, and for the continuous outcome, the identity link function (note that these are the most common and not the only possible options).
+
+In a GLMM, the linear predictor is a combination of the fixed and random effects excluding the residuals:
+
+$$
+\eta = X\beta + Zu
+$$
+where $Z$ is the random complement to the fixed $X$ and $u$ is the the random complement to the fixed $\beta$.
+
+As a starting point, we will fit a GLMM with a gamma distribution and the identity link (just a starting point, not necessarily the best option).
 
 The choice of the gamma distribution is mainly motivated by considerations outlined in [Lo & Andrews (2015)](https://www.frontiersin.org/articles/10.3389/fpsyg.2015.01171/full). To summarise briefly:
 
 * The Gamma distribution is the sum of multiple exponential distributions. Basically, it models the probability that no event occurs until a certain period of time. Therefore, it could be conceptualised as modelling several serial stages of processing, each of which finishes with a time that is exponentially distributed (see e.g., [Van Zandt & Ratcliff, 1995](https://link.springer.com/article/10.3758/BF03214411)).
 
-* In GLM and GLME models, fixed factors are treated as linear predictors of a function of the observed response rather than the observed response itself. Because we assume that RT is a direct measure of the time required to name a picture, the function binding the expected values of the DV and the effect of the predictor is the identity link.
+* Because we assume that RT is a direct measure of the time required to name a picture, the function binding the expected outcome and the effect of the predictor is the identity link function.
 
 ```{r}
 maxmod_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
@@ -816,3 +842,14 @@ Most importantly, we need to inspect the log-likelihoods for all models. If they
 ```{r}
 ss$llik
 ```
+
+Let us now expect the model residuals:
+
+```{r}
+plot(residuals(mod3_raw))
+plot(fitted(mod3_raw), resid(mod3_raw)) 
+```
+
+Looks okay, but it could be that the inverse link might provide a better fit. One could also examine other distributions (e.g., Inverse Gaussian).
+
+# for accuracy https://stats.idre.ucla.edu/other/mult-pkg/introduction-to-generalized-linear-mixed-models/
