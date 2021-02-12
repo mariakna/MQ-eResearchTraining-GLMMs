@@ -1890,7 +1890,7 @@ hist(residuals(m1))</code></pre>
 </ol>
 <p>Due to these properties, many statisticians believe that transformations may help reduce skewness (by minimising the impact of outliers) and stabilise variance by maintaining good power. This, in turn, means that transformations might make it easier to assess small effects.</p>
 <p>However, another property of RTs is that all RT distributions have a substantial shift away from zero. If such distributions are transformed, the shape and the scale of the resulting transformed distribution might be radically different from the orginal distribution of raw RTs. Furthermore, because the degree of variance is a function of the shift, transformations may work for some paradigms but not for others.</p>
-<p><a href="https://www.frontiersin.org/articles/10.3389/fpsyg.2015.01171/full">Lo and Andrews (2015)</a> have argued that the best approach would be to analyse raw RTs with the generalised linear mixed effects model. <a href="https://psyarxiv.com/9ksa6/">Schramm and Rouder (2019)</a> used data simulations to show that lognormal transformations do not offer any advantages as compared to raw data, while reciprocal transformations might even decrease the statistical power (albeit by a small margin). Other researchers argue that the best practice would be to conduct both types of analyses (on raw and transformed data) and only consider the effects significant if both models produced a significant outcome (e.g., <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6646942/">Brysbaert &amp; Stevens, 2018</a>). Importantly, because the distributions can be interpreted as data generating processes, the choice of a distribution often has cognitive interpretations (e.g., <a href="https://www.frontiersin.org/articles/10.3389/fpsyg.2019.00102/full">De Boeck &amp; Jeon, 2019)</a>), and should be done very carefully.</p>
+<p><a href="https://www.frontiersin.org/articles/10.3389/fpsyg.2015.01171/full">Lo and Andrews (2015)</a> have argued that the best approach would be to analyse raw RTs with the generalised linear mixed effects model. <a href="https://psyarxiv.com/9ksa6/">Schramm and Rouder (2019)</a> used data simulations to show that lognormal transformations do not offer any advantages as compared to raw data, while reciprocal transformations might even decrease the statistical power (albeit by a small margin). Other researchers argue that the best practice would be to conduct both types of analyses (on raw and transformed data) and only consider the effects significant if both models produced a significant outcome (e.g., <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6646942/">Brysbaert &amp; Stevens, 2018</a>). Importantly, because the distributions can be interpreted as data generating processes, the choice of a distribution often has cognitive interpretations (e.g., <a href="https://www.frontiersin.org/articles/10.3389/fpsyg.2019.00102/full">De Boeck &amp; Jeon, 2019</a>), and should be done very carefully.</p>
 <p>It is beyond the scope of today’s webinar to discuss this in depth so, in the following sections, I will give you examples on how to fit models on both transformed and raw data.</p>
 <div id="if-we-do-transform-which-transformation-do-we-choose-and-how" class="section level2">
 <h2>If we do transform, which transformation do we choose and how?</h2>
@@ -2314,9 +2314,9 @@ lapply(fit_all.OK,function(x) x@optinfo$conv$lme4$messages)</code></pre>
 <pre class="r"><code>ConfidInt &lt;- confint(mod3, parm = c(&quot;(Intercept)&quot;, &quot;Bas.SemUnRel&quot;, &quot;SemRel.SemUnRel&quot;), method = &quot;boot&quot;)
 round(ConfidInt, 3)</code></pre>
 <pre><code>##                   2.5 %  97.5 %
-## (Intercept)     -13.211 -12.257
-## Bas.SemUnRel     -0.214   0.378
-## SemRel.SemUnRel   0.090   0.718</code></pre>
+## (Intercept)     -13.187 -12.248
+## Bas.SemUnRel     -0.204   0.405
+## SemRel.SemUnRel   0.118   0.733</code></pre>
 <p><strong>Plot of effects</strong></p>
 <pre class="r"><code>labels &lt;- c(&quot;Contrast 1: German sem. unrelated vs. untrained pseudoword distractors&quot;, 
             &quot;Contrast 2: German sem. related vs. unrelated distractors&quot;)
