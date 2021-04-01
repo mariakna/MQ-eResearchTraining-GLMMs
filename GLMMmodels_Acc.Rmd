@@ -103,17 +103,33 @@ Number of correct vs. incorrect responses:
 ftable(data2$Accuracy)
 
 # correct vs. incorrect responses per LC:
-(Acc1 <- summarySEwithin(data2, measurevar = "Accuracy", 
+sum <- data2 %>%
+  arrange(Subj, LC) %>%
+  group_by(Subj, LC) %>%
+  summarise(Acc = mean(Accuracy))
+
+(Acc1 <- summarySEwithin(sum, measurevar = "Acc", 
                        withinvars = "LC", 
                        idvar = "Subj", na.rm = FALSE, conf.interval = .95))
 
 # correct vs. incorrect responses per naming attempt:
-(Acc2 <- summarySEwithin(data2, measurevar = "Accuracy", 
+sum2 <- data2 %>%
+  arrange(Subj, NamingAttempt) %>%
+  group_by(Subj, NamingAttempt) %>%
+  summarise(Acc = mean(Accuracy))
+
+(Acc2 <- summarySEwithin(sum2, measurevar = "Acc", 
                        withinvars = "NamingAttempt", 
                        idvar = "Subj", na.rm = FALSE, conf.interval = .95))
 
 # correct vs. incorrect responses per naming attempt per LC
-(Acc3 <- summarySEwithin(data2, measurevar = "Accuracy", 
+sum3 <- data2 %>%
+  arrange(Subj, NamingAttempt, LC) %>%
+  group_by(Subj, NamingAttempt, LC) %>%
+  summarise(Acc = mean(Accuracy))
+
+
+(Acc3 <- summarySEwithin(sum3, measurevar = "Acc", 
                        withinvars = c("LC", "NamingAttempt"), 
                        idvar = "Subj", na.rm = FALSE, conf.interval = .95))
 ```
@@ -121,9 +137,9 @@ ftable(data2$Accuracy)
 # Plot
 
 ```{r, message = FALSE, warning = FALSE}
-(plot_acc <- ggplot(Acc3, aes(as.numeric(NamingAttempt), Accuracy, color = factor(LC))) +
+(plot_acc <- ggplot(Acc3, aes(as.numeric(NamingAttempt), Acc, color = factor(LC))) +
   geom_line(size = 1) +
-  geom_pointrange(aes(ymin = Accuracy - se, ymax = Accuracy + se), size = .4) +
+  geom_pointrange(aes(ymin = Acc - se, ymax = Acc + se), size = .4) +
   labs(x = "Naming Attempt",
        y = "Percentage of correct responses") +
   scale_y_continuous(labels = percent_format(accuracy = 2)) +
@@ -187,8 +203,8 @@ anova(m1, m2)
 **Confidence intervals**
 
 ```{r, message = FALSE, warning = FALSE}
-#ConfidInt <- confint(m1, parm = c("(Intercept)", "cond"), method = "boot")
-#round(ConfidInt, 3)
+ConfidInt <- confint(m1, parm = c("(Intercept)", "cond"), method = "boot")
+round(ConfidInt, 3)
 ```
 
 **Table of effects**
