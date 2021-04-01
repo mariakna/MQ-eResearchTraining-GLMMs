@@ -494,7 +494,7 @@ ggplot(RT2, aes(x = Cond, y = meanRT, fill = Cond)) +
 ## Plot contrast 2 (related vs. unrelated)
 
 ```{r}
-dataG <- dataCorr3 %>%
+dataG <- dataCorr3 %>% 
   filter(Cond == "SemRelG" | Cond == "SemUnRelG")
 dataG$Cond <- factor(dataG$Cond)
 
