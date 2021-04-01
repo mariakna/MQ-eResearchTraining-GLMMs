@@ -1,0 +1,512 @@
+VarCorr(maxmod)
+mod2 <- lmer(transRT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + SemRel.SemUnRel|Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|TargetAnswer), dataCorr3)
+summary(rePCA(mod2))
+VarCorr(mod2)
+qqnorm(resid(mod2))
+plot(fitted(mod2), resid(mod2))
+length(unique(sample(1:4028, replace = T)))
+?validate
+validate(mod2, bw = T, B = 200)
+print(summary(mod2, corr = F))
+print(summary(mod2, corr = F))
+ConfidInt <- confint(mod2, parm = c("(Intercept)", "Bas.SemUnRel", "SemRel.SemUnRel"), method = "boot")
+round(ConfidInt, 3)
+labels <- c("Contrast 1: German sem. unrelated vs. untrained pseudoword distractors", "Contrast 2: German sem. related vs. unrelated distractors")
+keep.terms <- names(fixef(mod2)[-1])
+tab_model(mod2,
+terms = keep.terms,
+auto.label = FALSE,
+pred.labels = labels,
+show.se = TRUE, show.stat = TRUE,
+show.ci = FALSE, string.se = "SE",
+show.re.var = FALSE,
+show.obs = FALSE, show.ngroups = FALSE,
+emph.p = FALSE, dv.labels = "Dependent Variable", show.icc = FALSE)
+plot_model(mod2, title = "", terms = keep.terms, axis.labels = rev(labels),
+type = "est", sort.est = NULL, colors = "bw",
+show.values = TRUE, show.p = TRUE, value.offset = 0.4,
+value.size = 4, dot.size = 2, line.size = 1,
+vline.color = "black",
+width = 0.1) + theme_sjplot2() +
+scale_color_sjplot(palette = "circus")
+?glmer
+maxmod_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|TargetAnswer), dataCorr3, family = gamma(link = "identity"))
+maxmod_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|TargetAnswer), dataCorr3, family = Gamma(link = "identity"))
+summary(rePCA(maxmod_raw))
+?rePCA
+VarCorr(maxmod_raw)
+mod2_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) +
+(1 + SemRel.SemUnRel|TargetAnswer), dataCorr3, family = Gamma(link = "identity"))
+summary(rePCA(mod2_raw))
+VarCorr(mod2_raw)
+anova(mod2_raw)
+install.packages("broom")
+install.packages("broom")
+tidy(mod2)
+library("broom")
+tidy(mod2)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+rm(list=ls())
+library("openxlsx")
+library("Rmisc")
+library("tidyverse")
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+rm(list=ls())
+library("openxlsx")
+library("Rmisc")
+library("tidyverse")
+install.packages("dplyr")
+rm(list=ls())
+library("openxlsx")
+library("Rmisc")
+library("tidyverse")
+library("lme4")
+library("car")
+library("MASS")
+library("scales")
+library("lmerTest")
+library("sjmisc")
+library("sjPlot")
+library("ggsignif")
+library("RColorBrewer")
+library("rms")
+library("broom")
+data <- read.xlsx("pwiExp.xlsx", sheet = 1)
+data2 <- data %>%
+filter(Cond == "SemRelG" | Cond == "SemUnRelG" | Cond == "Baseline")
+data2$Cond <- factor(data2$Cond)
+levels(data2$Cond)
+data2$Subj <- factor(data2$Subj)
+data2$TargetAnswer <- factor(data2$TargetAnswer)
+dataCorr <- data2 %>%
+filter(Accuracy == 1)
+dataCorr2 <- dataCorr %>%
+filter(RT > 300 & RT < 2000) # 12 obs removed
+dataOpt1 <- dataCorr2 %>%
+filter(Cond == "SemRelG" | Cond == "SemUnRelG")
+levels(dataOpt1$Cond) # Baseline is still included
+dataOpt1$Cond <- factor(dataOpt1$Cond)
+levels(dataOpt1$Cond) # Baseline is no longer there
+(fractions(t(matrix <- rbind(int = 1/3,
+c1 = c(Baseline = 0, SemRelG = 1, SemUnRelG = -1),
+c2 = c(Baseline = 1, SemRelG = 0, SemUnRelG = -1)))))
+# function that formats the output of ginv():
+ginv2 <- function(x)
+fractions(provideDimnames(ginv(x), base = dimnames(x)[2:1]))
+# Invert matrix:
+(matrix2 <- ginv2(matrix))
+# Assign matrix to variable Cond:
+(contrasts(dataCorr2$Cond) <- matrix2[, 2:3])
+m0 <- lmer(RT ~ Cond + (1 + Cond||Subj) + (1 + Cond||TargetAnswer), data = dataCorr2)
+mat <- model.matrix(m0)
+dataCorr2$SemRel.SemUnRel <- mat[, 2]
+dataCorr2$Bas.SemUnRel <- mat[, 3]
+dataCorr2[1:5,18:ncol(dataCorr2)]
+m1 <- lm(RT ~ Cond, data = dataCorr2)
+hist(residuals(m1))
+qqPlot(residuals(m1))
+boxcox(m1)
+# Add a new column transRT with inverse RTs:
+dataCorr3 <- dataCorr2 %>%
+mutate(transRT = -10000/RT)
+# Check:
+plot(density(dataCorr3$transRT))
+qqnorm(dataCorr3$transRT)
+# Fit a model on inverse RTs and check residuals:
+mInv <- lm(transRT ~ Cond, data = dataCorr3)
+hist(residuals(mInv))
+qqPlot(residuals(mInv))
+mod2 <- lmer(transRT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + SemRel.SemUnRel|Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|TargetAnswer), dataCorr3)
+summary(rePCA(mod2))
+VarCorr(mod2)
+qqnorm(resid(mod2))
+plot(fitted(mod2), resid(mod2))
+print(summary(mod2, corr = F))
+labels <- c("Contrast 1: German sem. unrelated vs. untrained pseudoword distractors", "Contrast 2: German sem. related vs. unrelated distractors")
+keep.terms <- names(fixef(mod2)[-1])
+tab_model(mod2,
+terms = keep.terms,
+auto.label = FALSE,
+pred.labels = labels,
+show.se = TRUE, show.stat = TRUE,
+show.ci = FALSE, string.se = "SE",
+show.re.var = FALSE,
+show.obs = FALSE, show.ngroups = FALSE,
+emph.p = FALSE, dv.labels = "Dependent Variable", show.icc = FALSE)
+plot_model(mod2, title = "", terms = keep.terms, axis.labels = rev(labels),
+type = "est", sort.est = NULL, colors = "bw",
+show.values = TRUE, show.p = TRUE, value.offset = 0.4,
+value.size = 4, dot.size = 2, line.size = 1,
+vline.color = "black",
+width = 0.1) + theme_sjplot2() +
+scale_color_sjplot(palette = "circus")
+tidy(mod2)
+?tidy
+install.packages(broom.mixed)
+install.packages("broom.mixed")
+library("broom.mixed")
+tidy(mod2)
+?tidy
+tidy(mod2,
+effects = c("ran_pars", "fixed"),
+scales = NULL,
+exponentiate = FALSE,
+ran_prefix = NULL,
+conf.int = FALSE,
+conf.level = 0.95,
+conf.method = "Wald",
+ddf.method = NULL,
+profile = NULL,
+debug = FALSE)
+tidy(mod2,
+effects = c("ran_pars", "fixed"),
+exponentiate = FALSE,
+conf.int = TRUE,
+conf.method = "boot")
+glance(mod2)
+augment(mod2)
+glance(mod2)
+stargazer(mod2, style = "all", title = "Response times",
+covariate.labels = c("German sem. unrelated vs. untrained pseudoword distractors", "German sem. related vs. unrelated distractors"),
+dep.var.labels = "Response times",
+digits = 4, column.sep.width = "1pt",
+label = "tabA5", single.row = TRUE,
+no.space = TRUE, table.placement = "H")
+?stargazer
+??stargazer
+install.packages("stargazer")
+library("stargazer")
+stargazer(mod2, style = "all", title = "Response times",
+covariate.labels = c("German sem. unrelated vs. untrained pseudoword distractors", "German sem. related vs. unrelated distractors"),
+dep.var.labels = "Response times",
+digits = 4, column.sep.width = "1pt",
+label = "tabA5", single.row = TRUE,
+no.space = TRUE, table.placement = "H")
+mod2_refit <- lme4::lmer(transRT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + SemRel.SemUnRel|Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|TargetAnswer), dataCorr3)
+stargazer(mod2_refit, style = "all", title = "Response times",
+covariate.labels = c("German sem. unrelated vs. untrained pseudoword distractors",
+"German sem. related vs. unrelated distractors"),
+dep.var.labels = "Response times",
+digits = 4, column.sep.width = "1pt",
+label = "tabA5", single.row = TRUE,
+no.space = TRUE, table.placement = "H")
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+rm(list=ls())
+library("openxlsx")
+library("Rmisc")
+library("tidyverse")
+library("lme4")
+library("car")
+library("MASS")
+library("scales")
+library("lmerTest")
+library("sjmisc")
+library("sjPlot")
+library("ggsignif")
+library("RColorBrewer")
+library("rms")
+library("broom.mixed")
+data <- read.xlsx("pwiExp.xlsx", sheet = 1)
+data2 <- data %>%
+filter(Cond == "SemRelG" | Cond == "SemUnRelG" | Cond == "Baseline")
+data2$Cond <- factor(data2$Cond)
+levels(data2$Cond)
+data2$Subj <- factor(data2$Subj)
+data2$TargetAnswer <- factor(data2$TargetAnswer)
+dataCorr <- data2 %>%
+filter(Accuracy == 1)
+plot(density(dataCorr$RT))
+dataCorr2 <- dataCorr %>%
+filter(RT > 300 & RT < 2000) # 12 obs removed
+dataOpt1 <- dataCorr2 %>%
+filter(Cond == "SemRelG" | Cond == "SemUnRelG")
+levels(dataOpt1$Cond) # Baseline is still included
+dataOpt1$Cond <- factor(dataOpt1$Cond)
+levels(dataOpt1$Cond) # Baseline is no longer there
+model1 <- lm(RT ~ Cond, data = dataOpt1)
+round(summary(model1)$coef,3)
+contrasts(dataOpt1$Cond)
+dataOpt1$Condition <- ifelse(dataOpt1$Cond == "SemRelG", -1, 1)
+# we can also do:
+contrasts(dataOpt1$Cond) <- c(-1,+1)
+contrasts(dataOpt1$Cond)
+model2 <- lm(RT ~ Cond, data = dataOpt1)
+round(summary(model2)$coef,3)
+# function that formats the output of ginv():
+ginv2 <- function(x)
+fractions(provideDimnames(ginv(x), base = dimnames(x)[2:1]))
+# Invert matrix:
+(matrix2 <- ginv2(matrix))
+(fractions(t(matrix <- rbind(int = 1/3,
+c1 = c(Baseline = 1, SemRelG = 0, SemUnRelG = -1),
+c2 = c(Baseline = 0, SemRelG = 1, SemUnRelG = -1),))))
+(fractions(t(matrix <- rbind(int = 1/3,
+c1 = c(Baseline = 1, SemRelG = 0, SemUnRelG = -1),
+c2 = c(Baseline = 0, SemRelG = 1, SemUnRelG = -1)))))
+# function that formats the output of ginv():
+ginv2 <- function(x)
+fractions(provideDimnames(ginv(x), base = dimnames(x)[2:1]))
+# Invert matrix:
+(matrix2 <- ginv2(matrix))
+# Assign matrix to the variable Cond:
+(contrasts(dataCorr2$Cond) <- matrix2[, 2:3])
+m0 <- lmer(RT ~ Cond + (1 + Cond||Subj) + (1 + Cond||TargetAnswer), data = dataCorr2)
+mat <- model.matrix(m0)
+dataCorr2$SemRel.SemUnRel <- mat[, 2]
+dataCorr2$Bas.SemUnRel <- mat[, 3]
+dataCorr2[1:5,18:ncol(dataCorr2)]
+m0 <- lmer(RT ~ Cond + (1 + Cond||Subj) + (1 + Cond||TargetAnswer), data = dataCorr2)
+mat <- model.matrix(m0)
+dataCorr2$Bas.SemUnRel <- mat[, 2]
+dataCorr2$SemRel.SemUnRel <- mat[, 3]
+dataCorr2[1:5,18:ncol(dataCorr2)]
+m1 <- lm(RT ~ Cond, data = dataCorr2)
+hist(residuals(m1))
+qqPlot(residuals(m1))
+boxcox(m1)
+# Add a new column transRT with inverse RTs:
+dataCorr3 <- dataCorr2 %>%
+mutate(transRT = -10000/RT)
+# Check:
+plot(density(dataCorr3$transRT))
+qqnorm(dataCorr3$transRT)
+# Fit a model on inverse RTs and check residuals:
+mInv <- lm(transRT ~ Cond, data = dataCorr3)
+hist(residuals(mInv))
+qqPlot(residuals(mInv))
+maxmod <- lmer(transRT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|TargetAnswer), dataCorr3)
+summary(rePCA(maxmod))
+VarCorr(maxmod)
+mod2 <- lmer(transRT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + SemRel.SemUnRel|Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|TargetAnswer), dataCorr3)
+summary(rePCA(mod2))
+VarCorr(mod2)
+qqnorm(resid(mod2))
+plot(fitted(mod2), resid(mod2))
+print(summary(mod2, corr = F))
+labels <- c("Contrast 1: German sem. unrelated vs. untrained pseudoword distractors", "Contrast 2: German sem. related vs. unrelated distractors")
+keep.terms <- names(fixef(mod2)[-1])
+tab_model(mod2,
+terms = keep.terms,
+auto.label = FALSE,
+pred.labels = labels,
+show.se = TRUE, show.stat = TRUE,
+show.ci = FALSE, string.se = "SE",
+show.re.var = FALSE,
+show.obs = FALSE, show.ngroups = FALSE,
+emph.p = FALSE, dv.labels = "Dependent Variable", show.icc = FALSE)
+plot_model(mod2, title = "", terms = keep.terms, axis.labels = rev(labels),
+type = "est", sort.est = NULL, colors = "bw",
+show.values = TRUE, show.p = TRUE, value.offset = 0.4,
+value.size = 4, dot.size = 2, line.size = 1,
+vline.color = "black",
+width = 0.1) + theme_sjplot2() +
+scale_color_sjplot(palette = "circus")
+glance(mod2)
+maxmod_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|TargetAnswer), dataCorr3, family = Gamma(link = "identity"))
+summary(rePCA(maxmod_raw))
+VarCorr(maxmod_raw)
+print(summary(maxmod_raw, corr = F))
+mod2_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) +
+(1 + SemRel.SemUnRel|TargetAnswer), dataCorr3, family = Gamma(link = "identity"))
+summary(rePCA(mod2_raw))
+VarCorr(mod2_raw)
+mod3_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) +
+(1 + SemRel.SemUnRel|TargetAnswer), dataCorr3,
+family = Gamma(link = "identity"),
+control = glmerControl(optimizer = 'bobyqa', optCtrl = list(maxfun = 2e5)))
+summary(rePCA(mod3_raw))
+VarCorr(mod3_raw)
+print(summary(mod3_raw, corr = F))
+?convergence
+print(summary(mod2_raw, corr = F))
+mod3_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) +
+(1 + SemRel.SemUnRel|TargetAnswer), dataCorr3,
+family = Gamma(link = "identity"),
+control = glmerControl( optCtrl = list(maxfun = 2e5)))
+mod3_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) +
+(1 + SemRel.SemUnRel|TargetAnswer), dataCorr3,
+family = Gamma(link = "identity"),
+control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
+print(summary(mod3_raw, corr = F))
+fit_all <- lme4::allFit(mod2_raw)
+fit_all <- lme4::allFit(mod2_raw, maxfun = 2e5, parallel = "multicore")
+is.OK <- sapply(fit_all, is, "merMod")
+fit_all.OK <- fit_all[is.OK]
+lapply(fit_all.OK,function(x) x@optinfo$conv$lme4$messages)
+fit_all <- lme4::allFit(mod2_raw, maxfun = 2e5)
+is.OK <- sapply(fit_all, is, "merMod")
+fit_all.OK <- fit_all[is.OK]
+lapply(fit_all.OK,function(x) x@optinfo$conv$lme4$messages)
+ss <- summary(fit_all)
+ss$fixef
+ss$which.OK
+ss$which.OK
+is.OK <- sapply(fit_all, is, "merMod")
+fit_all.OK <- fit_all[is.OK]
+lapply(fit_all.OK,function(x) x@optinfo$conv$lme4$messages)
+ss$fixef
+ss$llik
+sort(supply(fit_all, logLik))
+log(ss$llik)
+print(summary(mod3_raw, corr = F))
+plot(residuals(mod3_raw))
+plot(fitted(mod3_raw), resid(mod3_raw))
+plot(fitted(mod3_raw), resid(mod3_raw))
+plot(fitted(mod3_raw), resid(mod3_raw))
+plot(residuals(mod3_raw))
+plot(residuals(mod3_raw))
+plot(fitted(mod3_raw), resid(mod3_raw))
+?glmer
+print(summary(mod2, corr = F))
+mod2b <- lmer(transRT ~ 1 +
+(1 + SemRel.SemUnRel|Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|TargetAnswer), dataCorr3)
+mod2b <- lmer(transRT ~ 1 +
+(1 + SemRel.SemUnRel|Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|TargetAnswer), dataCorr3,
+lmerControl(optimizer = "bobyqa"))
+?lmer
+mod2b <- lmer(transRT ~ 1 +
+(1 + SemRel.SemUnRel|Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|TargetAnswer), dataCorr3,
+control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
+summary(mod2b)
+anova(mod2, mod2b)
+?anova
+mod3b_raw <- glmer(RT ~ 1 +
+(1 + Bas.SemUnRel + SemRel.SemUnRel|Subj) +
+(1 + SemRel.SemUnRel|TargetAnswer), dataCorr3,
+family = Gamma(link = "identity"),
+control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
+summar(mod3b_raw)
+summary(mod3b_raw)
+anova(mod3_raw, mod3b_raw)
+labels <- c("Contrast 1: German sem. unrelated vs. untrained pseudoword distractors",
+"Contrast 2: German sem. related vs. unrelated distractors")
+keep.terms <- names(fixef(mod3_raw)[-1])
+tab_model(mod3_raw,
+terms = keep.terms,
+auto.label = FALSE,
+pred.labels = labels,
+show.se = TRUE, show.stat = TRUE,
+show.ci = FALSE, string.se = "SE",
+show.re.var = FALSE,
+show.obs = FALSE, show.ngroups = FALSE,
+emph.p = FALSE, dv.labels = "Dependent Variable", show.icc = FALSE)
+print(summary(mod3_raw, corr = F))
+?tab_model
+tab_model(mod3_raw,
+transform = NULL,
+terms = keep.terms,
+auto.label = FALSE,
+pred.labels = labels,
+show.se = TRUE, show.stat = TRUE,
+show.ci = FALSE, string.se = "SE",
+show.re.var = FALSE,
+show.obs = FALSE, show.ngroups = FALSE,
+emph.p = FALSE, dv.labels = "Dependent Variable", show.icc = FALSE)
+maxmod <- lmer(transRT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + Bas.SemUnRel + SemRel.SemUnRel||Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3)
+summary(rePCA(maxmod))
+VarCorr(maxmod)
+mod2 <- lmer(transRT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + SemRel.SemUnRel||Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3)
+summary(rePCA(mod2))
+VarCorr(mod2)
+qqnorm(resid(mod2))
+plot(fitted(mod2), resid(mod2))
+plot_model(mod2, title = "", terms = keep.terms, axis.labels = rev(labels),
+type = "est", sort.est = NULL, colors = "bw",
+show.values = TRUE, show.p = TRUE, value.offset = 0.4,
+value.size = 4, dot.size = 2, line.size = 1,
+vline.color = "black",
+width = 0.1) + theme_sjplot2() +
+scale_color_sjplot(palette = "circus")
+glance(mod2)
+labels <- c("Contrast 1: German sem. unrelated vs. untrained pseudoword distractors",
+"Contrast 2: German sem. related vs. unrelated distractors")
+keep.terms <- names(fixef(mod2)[-1])
+tab_model(mod2,
+terms = keep.terms,
+auto.label = FALSE,
+pred.labels = labels,
+show.se = TRUE, show.stat = TRUE,
+show.ci = FALSE, string.se = "SE",
+show.re.var = FALSE,
+show.obs = FALSE, show.ngroups = FALSE,
+emph.p = FALSE, dv.labels = "Dependent Variable", show.icc = FALSE)
+mod2b <- lmer(transRT ~ 1 +
+(1 + SemRel.SemUnRel||Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3)
+summary(mod2b)
+anova(mod2, mod2b)
+mod1_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + Bas.SemUnRel + SemRel.SemUnRel||Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3,
+family = Gamma(link = "identity"))
+summary(rePCA(mod1_raw))
+VarCorr(mod1_raw)
+mod2_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + SemRel.SemUnRel||Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3,
+family = Gamma(link = "identity"))
+summary(rePCA(mod2_raw))
+VarCorr(mod2_raw)
+mod3_raw <- glmer(RT ~ Bas.SemUnRel + SemRel.SemUnRel +
+(1 + SemRel.SemUnRel||Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3,
+family = Gamma(link = "identity"),
+control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
+print(summary(mod3_raw, corr = F))
+fit_all <- lme4::allFit(mod2_raw, maxfun = 2e5)
+ss <- summary(fit_all)
+ss$which.OK
+is.OK <- sapply(fit_all, is, "merMod")
+fit_all.OK <- fit_all[is.OK]
+lapply(fit_all.OK,function(x) x@optinfo$conv$lme4$messages)
+ss$fixef
+ss$llik
+plot(residuals(mod3_raw))
+plot(fitted(mod3_raw), resid(mod3_raw))
+labels <- c("Contrast 1: German sem. unrelated vs. untrained pseudoword distractors",
+"Contrast 2: German sem. related vs. unrelated distractors")
+keep.terms <- names(fixef(mod3_raw)[-1])
+tab_model(mod3_raw,
+transform = NULL,
+terms = keep.terms,
+auto.label = FALSE,
+pred.labels = labels,
+show.se = TRUE, show.stat = TRUE,
+show.ci = FALSE, string.se = "SE",
+show.re.var = FALSE,
+show.obs = FALSE, show.ngroups = FALSE,
+emph.p = FALSE, dv.labels = "Dependent Variable", show.icc = FALSE)
+mod3b_raw <- glmer(RT ~ 1 +
+(1 + SemRel.SemUnRel||Subj) +
+(1 + Bas.SemUnRel + SemRel.SemUnRel||TargetAnswer), dataCorr3,
+family = Gamma(link = "identity"),
+control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
+anova(mod3_raw, mod3b_raw)

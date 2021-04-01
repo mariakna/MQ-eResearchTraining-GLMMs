@@ -1,0 +1,228 @@
+---
+title: "Analysing accuracy data with GLMM models: Sneak peek"
+author: "Maria Korochkina"
+date: "Last update: `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+    theme: cerulean
+fontsize: 16pt
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+# Load required packages
+
+```{r, results = "hide"}
+rm(list=ls())
+
+library("openxlsx")
+library("Rmisc")
+library("tidyverse")
+library("lme4")
+library("car")
+library("MASS")
+library("scales")
+library("lmerTest")
+library("sjmisc")
+library("sjPlot")
+library("ggsignif")
+library("RColorBrewer")
+library("rms")
+library("broom.mixed")
+```
+
+# Load data
+
+Data that we will be using today is available [here](https://github.com/mariakna/MQ-eResearchTraning--G-LMEmodels). 
+
+Download the file *nwl.xlsx*, save it in a directory of your choice, make this directory your working directory by using the command `setwd()` and load the file as shown below:
+
+```{r}
+data <- read.xlsx("nwl.xlsx", sheet = 1)
+```
+
+## Data description
+
+This file contains data from a word learning task. German native speakers learned new names for familiar concepts (e.g., *Marp* for cat), simulating word learning in a foreign language. As part of the learning procedure, they were asked to name the pictures of the familiar concepts (e.g., cat) using the novel names (e.g., *Marp*). The words were taught in two conditions, categorically related (*CRel*) and unrelated (*UnRel*). We wish to know whether, averaged across the first 8 naming attempts, the participants were more accurate in the unrelated condition.
+
+* `Subj`: Participant ID (N = 60)
+* `Session`: there were 2 sessions, with 8 naming attempts in Session 1 and 4 naming attempts in Session 2
+* `NamingAttempts`: factor with 1-12 levels
+* `LC`: factor with 2 levels, `CRel` and `UnRel`
+* `Response`: participant's response
+* `Accuracy`: a factor with 2 levels, `0` = incorrect responses, `1` = correct responses
+* `RT`: response times
+
+Restrict the dataset to the first 8 naming attempts:
+
+```{r}
+data2 <- data %>%
+  filter(Session == "1")
+```
+
+Adjust factor levels for the independent variable and random terms:
+
+```{r}
+data2$LC <- factor(data2$LC)
+data2$Subj <- factor(data2$Subj)
+data2$NovelName <- factor(data2$NovelName)
+```
+
+# Check data
+
+```{r, results = "hide"}
+# Output is hidden to conserve space
+xtabs(~ Subj + List, data2) 
+xtabs(~ Subj + LC, data2) 
+xtabs(~ List + LC, data2) 
+xtabs(~ List + NamingAttempt, data2) 
+xtabs(~ Subj + NamingAttempt, data2) 
+```
+
+# Contrast coding
+
+CRelated (CRel) is coded as -1 and Unrelated (UnRel) is coded as 1:
+
+```{r}
+data2$cond <- ifelse(data2$LC == "CRel", -1, 1)
+```
+
+# Data summaries
+
+Number of correct vs. incorrect responses:
+
+```{r}
+# overall:
+ftable(data2$Accuracy)
+
+# correct vs. incorrect responses per LC:
+(Acc1 <- summarySEwithin(data2, measurevar = "Accuracy", 
+                       withinvars = "LC", 
+                       idvar = "Subj", na.rm = FALSE, conf.interval = .95))
+
+# correct vs. incorrect responses per naming attempt:
+(Acc2 <- summarySEwithin(data2, measurevar = "Accuracy", 
+                       withinvars = "NamingAttempt", 
+                       idvar = "Subj", na.rm = FALSE, conf.interval = .95))
+
+# correct vs. incorrect responses per naming attempt per LC
+(Acc3 <- summarySEwithin(data2, measurevar = "Accuracy", 
+                       withinvars = c("LC", "NamingAttempt"), 
+                       idvar = "Subj", na.rm = FALSE, conf.interval = .95))
+```
+
+# Plot
+
+```{r, message = FALSE, warning = FALSE}
+(plot_acc <- ggplot(Acc3, aes(as.numeric(NamingAttempt), Accuracy, color = factor(LC))) +
+  geom_line(size = 1) +
+  geom_pointrange(aes(ymin = Accuracy - se, ymax = Accuracy + se), size = .4) +
+  labs(x = "Naming Attempt",
+       y = "Percentage of correct responses") +
+  scale_y_continuous(labels = percent_format(accuracy = 2)) +
+  scale_x_continuous(breaks = c(1:8)) +
+  geom_vline(aes(xintercept = 8.5), color = "red", linetype = "dotted", size = 1) +
+  annotate("text", x = 6.5, y = 0.5, label = "24h\n including sleep", color = "red") +
+  theme_classic() +
+  theme(axis.title.x = element_text(size = rel(1.2), colour = "black"),
+        axis.title.y = element_text(size = rel(1.2), colour = "black"),
+        panel.background = element_rect(colour = "white"),
+        axis.text = element_text(size = rel(1), colour = "black"),
+        legend.text = element_text(size = rel(1), colour = "black"),
+        legend.title = element_text(size = rel(1.2), colour = "black"),
+        axis.line = element_line(colour = "black")) +
+  scale_color_manual(name = "Learning context", 
+                     labels = c("CRelated", "Unrelated"), 
+                     values = c("#440154FF", "#35B779FF")))
+```
+
+# Fit the model
+
+Start with the maximal model:
+
+```{r}
+m1 <- glmer(Accuracy ~ cond + 
+             (1 + cond|Subj) +
+             (1 + cond|NovelName), 
+           data = data2, family = binomial(link = "logit"))
+
+# Check random structure of the model:
+options(scipen = 999)
+summary(rePCA(m1))
+VarCorr(m1)
+
+# Did the model converge? Singularity issues?
+print(summary(m1), corr = F) 
+```
+
+Model with no condition:
+
+```{r}
+m2 <- glmer(Accuracy ~ 1 + 
+             (1 + cond|Subj) +
+             (1 + cond|NovelName), 
+           data = data2, family = binomial(link = "logit"))
+
+# Did the model converge? Singularity issues?
+print(summary(m2), corr = F) 
+
+# Check random structure of the model:
+summary(rePCA(m2))
+VarCorr(m2)
+```
+
+Model comparison:
+
+```{r}
+anova(m1, m2) 
+```
+
+**Confidence intervals**
+
+```{r, message = FALSE, warning = FALSE}
+#ConfidInt <- confint(m1, parm = c("(Intercept)", "cond"), method = "boot")
+#round(ConfidInt, 3)
+```
+
+**Table of effects**
+
+Fixed-effect coefficients and confidence intervals on the log-odds scale:
+
+```{r, message = FALSE, warning = FALSE}
+tab_model(m1, terms = "cond", pred.labels = "Learning context", transform = NULL, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.ci = FALSE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, emph.p = FALSE, dv.labels = "Response accuracy")
+```
+
+Exponentiate to get odds ratios:
+
+```{r, message = FALSE, warning = FALSE}
+tab_model(m1, terms = "cond", pred.labels = "Learning context", show.stat = TRUE, show.se = TRUE, string.se = "SE", show.ci = FALSE, show.re.var = FALSE, show.icc = FALSE, show.ngroups = FALSE, emph.p = FALSE, dv.labels = "Response accuracy")
+```
+
+Reminder: Put simply, the odds ratio (OR) measures whether an outcome is associated with some manipulation or not. In other words, the OR is the odds that an outcome will occur given a particular manipulation, compared to the odds of the outcome occurring in the absence of that manipulation. Odds of 1 corresponds to the probability of 0.50.
+
+Probability, odds ratios and log-odds are all the same thing, just expressed in different ways.
+
+Probability is the probability an event happens. Odds (of success) is defined as probability of success/probability of failure.nLog odds is the logarithm of the odds.
+
+**Plot of effects**
+
+```{r, message = FALSE, warning = FALSE}
+labels <- c("Learning context: CRelated vs. Unrelated")
+
+keep.terms <- names(fixef(m1)[-1])
+
+plot_model(m1, title = "", terms = keep.terms, axis.labels = rev(labels), 
+           type = "est", sort.est = NULL, colors = "bw", 
+           show.values = TRUE, show.p = TRUE, value.offset = 0.4, 
+           value.size = 4, dot.size = 2, line.size = 1, 
+           vline.color = "black", 
+           width = 0.1) + theme_sjplot2() +
+           scale_color_sjplot(palette = "circus")
+```
